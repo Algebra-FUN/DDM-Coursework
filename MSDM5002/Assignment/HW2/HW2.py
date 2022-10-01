@@ -1,6 +1,5 @@
 # %%0
 # import all needed module at this cell
-from unittest import result
 from matplotlib import pyplot as plt
 import shutil
 import re
@@ -27,7 +26,7 @@ def A_win_1_bullet(num_game):
     return B_lose/num_game
 
 
-def A_win_k_bullet_fast(num_game, k=3):
+def A_win_k_bullet_fast(num_game, k=1):
     num_pos = 10
     B_round = [1, 2, 3, 4, 5]
     B_killed = 0
@@ -205,6 +204,27 @@ print(bracket_check("p(y[th[on]{c(our)s}e])"))
 # %% 6
 # Band matrix
 
+def checkband(A, n, sign=1):
+    for k in range(n-1, -1, -1):
+        if np.count_nonzero(np.diag(A, sign*k)):
+            return k
+
+
+def bandwidth(A):
+    assert A.ndim == 2
+    m, n = A.shape
+    bL = checkband(A, m, -1)
+    bU = checkband(A, n, 1)
+    return (bU, bL)
+
+
+X = np.array([[1, 1, 1, 0], [0, 1, 1, 1], [0, 0, 1, 1]])
+Y = np.array([[1, 0], [1, 1], [1, 1]])
+
+print('X', bandwidth(X))
+print('Y', bandwidth(Y))
+
+
 # %% 7
 # Coupon collector
 
@@ -218,19 +238,21 @@ class Box:
     def open(self):
         return self.coupon
 
-def repeat_within(time_tol=0.1,summary=np.mean):
+
+def repeat_within(time_tol=0.1, summary=np.mean):
     def decor(func):
         @wraps(func)
-        def wrapper(*args,**kwargs):
+        def wrapper(*args, **kwargs):
             start_time = time.time()
             results = []
             while (time.time() - start_time) <= time_tol:
-                results.append(func(*args,**kwargs))
+                results.append(func(*args, **kwargs))
             return summary(results)
         return wrapper
     return decor
 
-@repeat_within(time_tol=0.1,summary=np.mean)
+
+@repeat_within(time_tol=0.1, summary=np.mean)
 def box_number(N, k):
     coupon_collection = {}
     coupon = 0
@@ -242,6 +264,7 @@ def box_number(N, k):
             coupon_collection[item] = 1
             coupon += 1
     return box
+
 
 # -------------------- #
 N = 10
@@ -272,8 +295,9 @@ plt.cla()
 # %% 8
 # Tic-tac-toe
 
+
 class Player:
-    def __init__(self,name,ai):
+    def __init__(self, name, ai):
         self.name = name
         self.ai = ai
         self.mark = None
@@ -281,96 +305,102 @@ class Player:
     def __repr__(self):
         return self.name
 
-    def play(self,game):
-        return self.ai(self,game)
+    def play(self, game):
+        return self.ai(self, game)
 
-    def assign(self,number):
+    def assign(self, number):
         self.mark = number
+
 
 def Tictactoe_summary(results):
     turns = len(results)
     results = np.array(results)
-    return [*(np.sum(results==x)/turns for x in (1,-1,0)),turns]
+    return [*(np.sum(results == x)/turns for x in (1, -1, 0)), turns]
+
 
 class Tictactoe:
-    def __init__(self,player1,player2):
-        self.broad = np.zeros((3,3))
+    def __init__(self, player1, player2):
+        self.broad = np.zeros((3, 3))
         self.posp = player1
         self.posp.assign(1)
         self.negp = player2
         self.negp.assign(-1)
 
-    @repeat_within(time_tol=1,summary=Tictactoe_summary)
+    @repeat_within(time_tol=1, summary=Tictactoe_summary)
     def __call__(self):
-        self.broad = np.zeros((3,3))
+        self.broad = np.zeros((3, 3))
         who = (-1)**np.random.randint(2)
         while 0 in self.broad:
             player = self.player(who)
             pos = player.play(self)
             self.broad[pos] = who
-            if (status:=self.check()) != 0:
+            if (status := self.check()) != 0:
                 return status
             who *= -1
         else:
             return 0
 
-    def player(self,who):
+    def player(self, who):
         return self.posp if who == 1 else self.negp
 
-    def pos(self,mark):
-        return list(zip(*np.where(self.broad==mark)))
+    def pos(self, mark):
+        return list(zip(*np.where(self.broad == mark)))
 
     def empty_pos(self):
         return self.pos(0)
 
     def check(self):
-        for who in (-1,1):
+        for who in (-1, 1):
             # check row
             for r in range(3):
-                if all(self.broad[r,:] == who):
+                if all(self.broad[r, :] == who):
                     return who
-            
+
             # check col
             for c in range(3):
-                if all(self.broad[:,c] == who):
+                if all(self.broad[:, c] == who):
                     return who
-            
+
             # check diag
             if all(np.diag(self.broad) == who):
                 return who
 
         # check sub-diag
-        if self.broad[0,2]==self.broad[1,1]==self.broad[2,0]:
-            return self.broad[1,1]
+        if self.broad[0, 2] == self.broad[1, 1] == self.broad[2, 0]:
+            return self.broad[1, 1]
         return 0
 
 # %% 8-a
 # 8-a
 
-def rand_choice(self,game):
+
+def rand_choice(self, game):
     empty_pos = game.empty_pos()
     choice = np.random.randint(len(empty_pos))
     return empty_pos[choice]
 
-alice = Player('Alice',ai=rand_choice)
-bob = Player('Bob',ai=rand_choice)
 
-tictactoe = Tictactoe(alice,bob)
+alice = Player('Alice', ai=rand_choice)
+bob = Player('Bob', ai=rand_choice)
+
+tictactoe = Tictactoe(alice, bob)
 result = tictactoe()
 print(result)
 
 # %% 8-b
 # 8-b
 
-def bob_ai(self,game):
+
+def bob_ai(self, game):
     # 1.picks the centre
-    if (1,1) in game.empty_pos():
-        return (1,1)
+    if (1, 1) in game.empty_pos():
+        return (1, 1)
 
     # 2.picks any available at random
-    return rand_choice(self,game)
+    return rand_choice(self, game)
 
-def alice_ai(self,game):
+
+def alice_ai(self, game):
     empty = game.empty_pos()
     # 1. helps her win immediately
     for pos in empty:
@@ -388,25 +418,56 @@ def alice_ai(self,game):
     not_bob_win_pos = None
     for pos in empty:
         game.broad[pos] = -self.mark
-        # bob's win pos
-        if game.check() == -self.mark:
-            bob_win_pos_num += 1
-        else:
-            not_bob_win_pos = pos
+        winner = game.check()
         game.broad[pos] = 0
+        # bob's win pos
+        if winner == -self.mark:
+            bob_win_pos_num += 1
+            continue
+        if not_bob_win_pos:
+            break
+        not_bob_win_pos = pos
     if bob_win_pos_num == n-1:
         return not_bob_win_pos
 
     # 3. picks any available at random
-    return rand_choice(self,game)
+    return rand_choice(self, game)
 
 
-alice = Player('Alice',ai=alice_ai)
-bob = Player('Bob',ai=bob_ai)
+alice = Player('Alice', ai=alice_ai)
+bob = Player('Bob', ai=bob_ai)
 
-tictactoe = Tictactoe(alice,bob)
-result = tictactoe()
+tictactoe_AI = Tictactoe(alice, bob)
+result = tictactoe_AI()
 print(result)
+
+# %% 9
+# Magic command
+
+
+class TimeitCustom:
+    def __init__(self, repeat=7, loops=10000000):
+        self.repeat = repeat
+        self.loops = loops
+        self.average = 0
+        self.stdev = 0
+
+    def __call__(self, target, *args, **kwds):
+        running_time = []
+        for _ in range(self.repeat):
+            start_time = time.time()
+            for _ in range(self.loops):
+                target(*args, **kwds)
+            running_time.append(1e9*(time.time() - start_time)/self.loops)
+
+        self.average = np.mean(running_time)
+        self.stdev = np.std(running_time)
+        print(f"{self.average:.2f} ns ± {self.stdev:.4f} ns per loop (mean ± std. dev. of {self.repeat} runs, {self.loops} loops each)")
+        return self
+
+
+timeit_custom = TimeitCustom(repeat=7, loops=10000000)
+timeit_custom(lambda x: x*x, 1)
 
 # %% 10
 # Quadratic equation
