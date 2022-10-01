@@ -6,6 +6,7 @@ import re
 import os
 import time
 import numpy as np
+from functools import wraps
 
 # %%1
 # Russian roulette
@@ -216,23 +217,30 @@ class Box:
     def open(self):
         return self.coupon
 
+def repeat_in(time_tol=0.1,summary=np.mean):
+    def decor(func):
+        @wraps(func)
+        def wrapper(*args,**kwargs):
+            start_time = time.time()
+            results = []
+            while (time.time() - start_time) <= time_tol:
+                results.append(func(*args,**kwargs))
+            return summary(results)
+        return wrapper
+    return decor
 
-def box_number(N, k, time_tol=0.1):
-    start_time = time.time()
-    boxes = []
-    while (time.time() - start_time) <= time_tol:
-        coupon_collection = {}
-        coupon = 0
-        box = 0
-        while coupon < k:
-            item = Box(N).open()
-            box += 1
-            if not item in coupon_collection:
-                coupon_collection[item] = 1
-                coupon += 1
-        boxes.append(box)
-    return np.mean(boxes)
-
+@repeat_in(time_tol=0.1,summary=np.mean)
+def box_number(N, k):
+    coupon_collection = {}
+    coupon = 0
+    box = 0
+    while coupon < k:
+        item = Box(N).open()
+        box += 1
+        if not item in coupon_collection:
+            coupon_collection[item] = 1
+            coupon += 1
+    return box
 
 # -------------------- #
 N = 10
@@ -259,6 +267,11 @@ plt.xlabel('N')
 plt.ylabel('expected number of boxes')
 plt.savefig('7-b')
 plt.cla()
+
+# %% 8
+# Tic-tac-toe
+
+
 
 # %% 10
 # Quadratic equation
