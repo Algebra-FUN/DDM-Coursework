@@ -1,5 +1,6 @@
 # %%0
 # import all needed module at this cell
+from unittest import result
 from matplotlib import pyplot as plt
 import shutil
 import re
@@ -217,7 +218,7 @@ class Box:
     def open(self):
         return self.coupon
 
-def repeat_in(time_tol=0.1,summary=np.mean):
+def repeat_within(time_tol=0.1,summary=np.mean):
     def decor(func):
         @wraps(func)
         def wrapper(*args,**kwargs):
@@ -229,7 +230,7 @@ def repeat_in(time_tol=0.1,summary=np.mean):
         return wrapper
     return decor
 
-@repeat_in(time_tol=0.1,summary=np.mean)
+@repeat_within(time_tol=0.1,summary=np.mean)
 def box_number(N, k):
     coupon_collection = {}
     coupon = 0
@@ -252,7 +253,7 @@ plt.title("number of boxes to get k types of coupons(N=10)")
 plt.grid(linestyle=':')
 plt.xlabel('k')
 plt.ylabel('expected number of boxes')
-plt.savefig('7-a')
+plt.savefig('./img/7-a.png')
 plt.cla()
 
 # -------------------- #
@@ -265,13 +266,147 @@ plt.title("number of boxes to get k types of coupons(k=N)")
 plt.grid(linestyle=':')
 plt.xlabel('N')
 plt.ylabel('expected number of boxes')
-plt.savefig('7-b')
+plt.savefig('./img/7-b.png')
 plt.cla()
 
 # %% 8
 # Tic-tac-toe
 
+class Player:
+    def __init__(self,name,ai):
+        self.name = name
+        self.ai = ai
+        self.mark = None
 
+    def __repr__(self):
+        return self.name
+
+    def play(self,game):
+        return self.ai(self,game)
+
+    def assign(self,number):
+        self.mark = number
+
+def Tictactoe_summary(results):
+    turns = len(results)
+    results = np.array(results)
+    return [*(np.sum(results==x)/turns for x in (1,-1,0)),turns]
+
+class Tictactoe:
+    def __init__(self,player1,player2):
+        self.broad = np.zeros((3,3))
+        self.posp = player1
+        self.posp.assign(1)
+        self.negp = player2
+        self.negp.assign(-1)
+
+    @repeat_within(time_tol=1,summary=Tictactoe_summary)
+    def __call__(self):
+        self.broad = np.zeros((3,3))
+        who = (-1)**np.random.randint(2)
+        while 0 in self.broad:
+            player = self.player(who)
+            pos = player.play(self)
+            self.broad[pos] = who
+            if (status:=self.check()) != 0:
+                return status
+            who *= -1
+        else:
+            return 0
+
+    def player(self,who):
+        return self.posp if who == 1 else self.negp
+
+    def pos(self,mark):
+        return list(zip(*np.where(self.broad==mark)))
+
+    def empty_pos(self):
+        return self.pos(0)
+
+    def check(self):
+        for who in (-1,1):
+            # check row
+            for r in range(3):
+                if all(self.broad[r,:] == who):
+                    return who
+            
+            # check col
+            for c in range(3):
+                if all(self.broad[:,c] == who):
+                    return who
+            
+            # check diag
+            if all(np.diag(self.broad) == who):
+                return who
+
+        # check sub-diag
+        if self.broad[0,2]==self.broad[1,1]==self.broad[2,0]:
+            return self.broad[1,1]
+        return 0
+
+# %% 8-a
+# 8-a
+
+def rand_choice(self,game):
+    empty_pos = game.empty_pos()
+    choice = np.random.randint(len(empty_pos))
+    return empty_pos[choice]
+
+alice = Player('Alice',ai=rand_choice)
+bob = Player('Bob',ai=rand_choice)
+
+tictactoe = Tictactoe(alice,bob)
+result = tictactoe()
+print(result)
+
+# %% 8-b
+# 8-b
+
+def bob_ai(self,game):
+    # 1.picks the centre
+    if (1,1) in game.empty_pos():
+        return (1,1)
+
+    # 2.picks any available at random
+    return rand_choice(self,game)
+
+def alice_ai(self,game):
+    empty = game.empty_pos()
+    # 1. helps her win immediately
+    for pos in empty:
+        game.broad[pos] = self.mark
+        # alice's win pos
+        if game.check() == self.mark:
+            return pos
+        game.broad[pos] = 0
+
+    # 2. helps Bob win immediately
+    # n-1 position is Bob's win pos
+    # 1 position is not Bob's win pos
+    n = len(empty)
+    bob_win_pos_num = 0
+    not_bob_win_pos = None
+    for pos in empty:
+        game.broad[pos] = -self.mark
+        # bob's win pos
+        if game.check() == -self.mark:
+            bob_win_pos_num += 1
+        else:
+            not_bob_win_pos = pos
+        game.broad[pos] = 0
+    if bob_win_pos_num == n-1:
+        return not_bob_win_pos
+
+    # 3. picks any available at random
+    return rand_choice(self,game)
+
+
+alice = Player('Alice',ai=alice_ai)
+bob = Player('Bob',ai=bob_ai)
+
+tictactoe = Tictactoe(alice,bob)
+result = tictactoe()
+print(result)
 
 # %% 10
 # Quadratic equation
