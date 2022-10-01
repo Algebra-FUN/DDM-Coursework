@@ -297,149 +297,137 @@ plt.cla()
 
 
 class Player:
-    def __init__(self, name, ai):
-        self.name = name
+    def __init__(self, ai):
         self.ai = ai
-        self.mark = None
 
-    def __repr__(self):
-        return self.name
+    def reset(self, mark=0, rival=None):
+        self.mark = mark
+        self.rival = rival
+        self.row_score = [0, 0, 0]
+        self.col_score = [0, 0, 0]
+        self.diag_score = 0
+        self.sub_diag_score = 0
 
-    def play(self, game):
-        return self.ai(self, game)
+    def select(self, vacancies):
+        return self.ai(self, self.rival, vacancies)
 
-    def assign(self, number):
-        self.mark = number
+    def iswin(self):
+        if 3 in (*self.row_score, *self.col_score, self.diag_score, self.sub_diag_score):
+            return True
+        return False
+
+    def score(self, pos):
+        i, j = pos
+        self.row_score[i] += 1
+        self.col_score[j] += 1
+        if i == j:
+            self.diag_score += 1
+        elif i+j == 2:
+            self.sub_diag_score += 1
+        return self.iswin()
 
 
 def Tictactoe_summary(results):
     turns = len(results)
     results = np.array(results)
-    return [*(np.sum(results == x)/turns for x in (1, -1, 0)), turns]
+    # [p1 win, p2 win, draw, turns]
+    return [*(np.sum(results == x)/turns for x in (0, 1, -1)), turns]
 
 
-class Tictactoe:
-    def __init__(self, player1, player2):
-        self.broad = np.zeros((3, 3))
-        self.posp = player1
-        self.posp.assign(1)
-        self.negp = player2
-        self.negp.assign(-1)
-
-    @repeat_within(time_tol=1, summary=Tictactoe_summary)
-    def __call__(self):
-        self.broad = np.zeros((3, 3))
-        who = (-1)**np.random.randint(2)
-        while 0 in self.broad:
-            player = self.player(who)
-            pos = player.play(self)
-            self.broad[pos] = who
-            if (status := self.check()) != 0:
-                return status
-            who *= -1
-        else:
-            return 0
-
-    def player(self, who):
-        return self.posp if who == 1 else self.negp
-
-    def pos(self, mark):
-        return list(zip(*np.where(self.broad == mark)))
-
-    def empty_pos(self):
-        return self.pos(0)
-
-    def check(self):
-        for who in (-1, 1):
-            # check row
-            for r in range(3):
-                if all(self.broad[r, :] == who):
-                    return who
-
-            # check col
-            for c in range(3):
-                if all(self.broad[:, c] == who):
-                    return who
-
-            # check diag
-            if all(np.diag(self.broad) == who):
-                return who
-
-        # check sub-diag
-        if self.broad[0, 2] == self.broad[1, 1] == self.broad[2, 0]:
-            return self.broad[1, 1]
-        return 0
+@repeat_within(time_tol=1, summary=Tictactoe_summary)
+def tictactoe(p0, p1):
+    players = (p0, p1)
+    p0.reset(mark=0,rival=p1)
+    p1.reset(mark=1,rival=p0)
+    vacancies = [(i, j) for j in range(3) for i in range(3)]
+    who = np.random.randint(2)
+    while vacancies:
+        player = players[who]
+        pos, winner = player.select(vacancies)
+        if winner is not None or player.score(pos):
+            return winner or who
+        vacancies.remove(pos)
+        who = (who+1) % 2
+    return -1
 
 # %% 8-a
-# 8-a
 
 
-def rand_choice(self, game):
-    empty_pos = game.empty_pos()
-    choice = np.random.randint(len(empty_pos))
-    return empty_pos[choice]
+def rand_choice(self: Player, rival: Player, vacancies):
+    choice = np.random.randint(len(vacancies))
+    return vacancies[choice], None
 
 
-alice = Player('Alice', ai=rand_choice)
-bob = Player('Bob', ai=rand_choice)
+Alice = Player(ai=rand_choice)
+Bob = Player(ai=rand_choice)
 
-tictactoe = Tictactoe(alice, bob)
-result = tictactoe()
-print(result)
+tictactoe(Alice, Bob)
 
 # %% 8-b
-# 8-b
 
 
-def bob_ai(self, game):
-    # 1.picks the centre
-    if (1, 1) in game.empty_pos():
-        return (1, 1)
+def bob_ai(self, rival, vacancies):
+    # 1. pick centre
+    if (1, 1) in vacancies:
+        return (1, 1), None
+    # 2. pick randomly
+    return rand_choice(self, rival, vacancies)
 
-    # 2.picks any available at random
-    return rand_choice(self, game)
 
-
-def alice_ai(self, game):
-    empty = game.empty_pos()
-    # 1. helps her win immediately
-    for pos in empty:
-        game.broad[pos] = self.mark
-        # alice's win pos
-        if game.check() == self.mark:
-            return pos
-        game.broad[pos] = 0
-
-    # 2. helps Bob win immediately
-    # n-1 position is Bob's win pos
-    # 1 position is not Bob's win pos
-    n = len(empty)
-    bob_win_pos_num = 0
-    not_bob_win_pos = None
-    for pos in empty:
-        game.broad[pos] = -self.mark
-        winner = game.check()
-        game.broad[pos] = 0
-        # bob's win pos
-        if winner == -self.mark:
-            bob_win_pos_num += 1
+def alice_ai(self: Player, rival: Player, vacancies):
+    # 1. alice try to win
+    vrs, vcs = zip(*vacancies)
+    for r, s in enumerate(self.row_score):
+        if s != 2:
             continue
-        if not_bob_win_pos:
+        if r in vrs:
+            return None, self.mark
+    for c, s in enumerate(self.col_score):
+        if s != 2:
+            continue
+        if c in vcs:
+            return None, self.mark
+
+    if self.diag_score == 2:
+        for r, c in vacancies:
+            if r == c:
+                return None, self.mark
+
+    if self.sub_diag_score == 2:
+        for r, c in vacancies:
+            if r+c == 2:
+                return None, self.mark
+
+    # 2. try to let bob win in next turn
+    vacxbob = False
+    # (n-1) vacancy for bob to win
+    # only 1 vacancy for bob not win
+    for r,c in vacancies:
+        if r==c and rival.diag_score == 2:
+            continue
+        if r+c==2 and rival.sub_diag_score == 2:
+            continue
+        if rival.row_score[r] == 2:
+            continue
+        if rival.col_score[c] == 2:
+            continue
+        # this (r,c) not for bob to win
+        if vacxbob:
+            # at least 2 vacancy for bob not win
             break
-        not_bob_win_pos = pos
-    if bob_win_pos_num == n-1:
-        return not_bob_win_pos
+        vacxbob = True
+    else:
+        if vacxbob:
+            return None, rival.mark
 
-    # 3. picks any available at random
-    return rand_choice(self, game)
+    # 3. pick randomly
+    return rand_choice(self, rival,vacancies)
 
+Alice = Player(ai=alice_ai)
+Bob = Player(ai=bob_ai)
 
-alice = Player('Alice', ai=alice_ai)
-bob = Player('Bob', ai=bob_ai)
+tictactoe(Alice, Bob)
 
-tictactoe_AI = Tictactoe(alice, bob)
-result = tictactoe_AI()
-print(result)
 
 # %% 9
 # Magic command
