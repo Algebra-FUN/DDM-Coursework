@@ -646,15 +646,15 @@ class Tictactoe:
         self.reset()
         who = random.randint(0, 1)
         while self.vacancies:
-            player = self.players[who]
+            player = self.players[who % 2]
             pos, winner = player.select(self.vacancies)
             if winner is not None:
                 return winner
             if player.is2win(pos):
-                return who
+                return player.mark
             player.score(pos)
             self.vacancies.remove(pos)
-            who = (who+1) % 2
+            who += 1
         return -1
 
 
@@ -746,6 +746,7 @@ def quadratic(a,  b,  c):
     if delta >= 0:
         return (-b+delta**.5)/2/a, (-b-delta**.5)/2/a
     return (-b+(-delta)**.5*1j)/2/a, (-b-(-delta)**.5*1j)/2/a
+
 
 def quadratic_(a,  b,  c):
     delta = b**2-4*a*c
