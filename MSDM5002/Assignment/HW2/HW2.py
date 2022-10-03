@@ -5,8 +5,10 @@ import shutil
 import re
 import os
 import time
+import random
 import numpy as np
 from functools import wraps
+from tqdm import tqdm
 
 # %%1
 # Russian roulette
@@ -33,8 +35,7 @@ def A_win_k_bullet_fast(num_game, k=1):
     alive_games = num_game
     for i in range(num_pos):
         p = k/(num_pos - i)
-        # killed_games = (np.random.random(size=alive_games)<p).sum()
-        # killed_games = np.random.binomial(1,p,size=alive_games) if p < 1 else alive_games
+        # killed_games = np.random.binomial(1,p,size=alive_games).sum() if p < 1 else alive_games
         killed_games = np.random.binomial(
             alive_games, p) if p < 1 else alive_games
         if i in B_round:
@@ -120,11 +121,258 @@ print(min(P3), '<= P3 <=', max(P3))
 print(min(P4), '<= P4 <=', max(P4))
 
 # %% 2
-#
+# Supermarket
+
+random.seed(20912792)
+
+
+def repeat(trials=1000, summary=np.mean):
+    def decor(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            results = []
+            for _ in range(trials):
+                results.append(func(*args, **kwargs))
+            return summary(results)
+        return wrapper
+    return decor
+
+
+DIRECTIONS = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+
+class Player:
+    def __init__(self, init_pos, look_ai, walk_ai):
+        self.init_pos = init_pos
+        self.look_ai = look_ai
+        self.walk_ai = walk_ai
+
+    def config(self, market, other):
+        self.market = market
+        self.other = other
+
+    def reset(self):
+        self.pos = self.init_pos
+        self.previous = None
+
+    def look(self):
+        return self.look_ai(self)
+
+    def walk(self):
+        self.next = self.walk_ai(self)
+
+    def update(self):
+        self.previous = self.pos
+        self.pos = self.next
+
+    def available_pos(self):
+        x, y = self.pos
+        n = self.market.n
+        for dx, dy in DIRECTIONS:
+            x_, y_ = x+dx, y+dy
+            # backward is always disabled
+            if 0 <= x_ <= n and 0 <= y_ <= n and (x_, y_) != self.previous:
+                yield (x_, y_)
+
+    def move_to(self):
+        x, y = self.pos
+        Dx = self.other.pos[0] - x
+        Dy = self.other.pos[1] - y
+        dx = Dx//abs(Dx) if Dx else 0
+        dy = Dy//abs(Dy) if Dy else 0
+        return (x+dx, y+dy)
+
+
+class SuperMarket:
+    def __init__(self, n, p0: Player, p1: Player):
+        self.n = n
+        self.p0 = p0
+        self.p1 = p1
+        self.p0.config(self, p1)
+        self.p1.config(self, p0)
+
+    def reset(self):
+        self.p0.reset()
+        self.p1.reset()
+
+    def not_meet(self):
+        return self.p0.pos != self.p1.pos
+
+    @repeat(trials=1000)
+    def __call__(self):
+        self.reset()
+        t = 0
+        while self.not_meet():
+            self.p0.walk()
+            self.p1.walk()
+            self.p0.update()
+            self.p1.update()
+            t += 5
+        return t
+
+
+def stand(self: Player):
+    return self.pos
+
+
+def blind(self: Player):
+    return False
+
+
+def line_sight(self: Player):
+    if self.pos[0] == self.other.pos[0] or self.pos[1] == self.other.pos[1]:
+        return True
+    return False
+
+
+def rand_find(self: Player):
+    if self.look():
+        return self.move_to()
+    return random.choice(list(self.available_pos()))
+
+
+# %% a)
+ns = [*range(2, 21)]
+
+plt.cla()
+ts = []
+for n in tqdm(ns, desc="2-a-only Alice walks"):
+    Alice = Player((0, n), line_sight, rand_find)
+    Bob = Player((n, 0), blind, stand)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ns, ts, marker='s', label="only Alice walks")
+
+ts = []
+for n in tqdm(ns, desc="2-a-both Alice and Bob walk"):
+    Alice = Player((0, n), line_sight, rand_find)
+    Bob = Player((n, 0), line_sight, rand_find)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ns, ts, marker='x', label="both Alice and Bob walk")
+
+
+plt.legend()
+plt.title("Average finding time over 1000 trials")
+plt.grid(linestyle=':')
+plt.xlabel('n')
+plt.ylabel('finding time')
+plt.savefig('./img/2-a.png')
+
+
+# %% b)
+n = 19
+ks = [*range((n+1)//2)]
+
+plt.cla()
+ts = []
+for k in tqdm(ks, desc="2-b-only Alice walks"):
+    a = (n-1)//2-k
+    b = (n+1)//2+k
+    Alice = Player((a, b), line_sight, rand_find)
+    Bob = Player((b, a), blind, stand)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ks, ts, marker='s', label="only Alice walks")
+
+ts = []
+for k in tqdm(ks, desc="2-b-both Alice and Bob walk"):
+    a = (n-1)//2-k
+    b = (n+1)//2+k
+    Alice = Player((a, b), line_sight, rand_find)
+    Bob = Player((b, a), line_sight, rand_find)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ks, ts, marker='x', label="both Alice and Bob walk")
+
+plt.legend()
+plt.title("Average finding time over 1000 trials")
+plt.grid(linestyle=':')
+plt.xlabel('k')
+plt.ylabel('finding time')
+plt.savefig('./img/2-b.png')
+
+# %% c)
+
+
+def poor_forward_sight(self: Player):
+    for pos in self.available_pos():
+        if self.other.pos == pos:
+            return True
+    return False
+
+
+# %% c) -a
+ns = [*range(2, 21)]
+
+plt.cla()
+ts = []
+for n in tqdm(ns, desc="2-c-a-only Alice walks"):
+    Alice = Player((0, n), poor_forward_sight, rand_find)
+    Bob = Player((n, 0), blind, stand)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ns, ts, marker='s', label="only Alice walks")
+
+ts = []
+for n in tqdm(ns, desc="2-c-a-both Alice and Bob walk"):
+    Alice = Player((0, n), poor_forward_sight, rand_find)
+    Bob = Player((n, 0), poor_forward_sight, rand_find)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ns, ts, marker='x', label="both Alice and Bob walk")
+
+
+plt.legend()
+plt.title("Average finding time over 1000 trials")
+plt.grid(linestyle=':')
+plt.xlabel('n')
+plt.ylabel('finding time')
+plt.savefig('./img/2-c-a.png')
+
+# %% c) -b
+n = 19
+ks = [*range((n+1)//2)]
+
+plt.cla()
+ts = []
+for k in tqdm(ks, desc="2-c-b-only Alice walks"):
+    a = (n-1)//2-k
+    b = (n+1)//2+k
+    Alice = Player((a, b), poor_forward_sight, rand_find)
+    Bob = Player((b, a), blind, stand)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ks, ts, marker='s', label="only Alice walks")
+
+ts = []
+for k in tqdm(ks, desc="2-c-b-both Alice and Bob walk"):
+    a = (n-1)//2-k
+    b = (n+1)//2+k
+    Alice = Player((a, b), poor_forward_sight, rand_find)
+    Bob = Player((b, a), poor_forward_sight, rand_find)
+
+    supermarket = SuperMarket(n, Alice, Bob)
+    ts.append(supermarket())
+plt.plot(ks, ts, marker='x', label="both Alice and Bob walk")
+
+plt.legend()
+plt.title("Average finding time over 1000 trials")
+plt.grid(linestyle=':')
+plt.xlabel('k')
+plt.ylabel('finding time')
+plt.savefig('./img/2-c-b.png')
+
 
 # %%3
 # File organization
-
 WORK_DIR = f"{os.getcwd()}\\materials\\question3"
 
 MONTH = ("JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -149,7 +397,7 @@ def organize(work_dir=WORK_DIR):
         shutil.move(f"{work_dir}\\{file}", f"{target_dir}\\{new_file}")
 
 
-organize(WORK_DIR)
+# organize(WORK_DIR)
 
 # %%4
 # Frequency analysis
@@ -197,8 +445,8 @@ def bracket_check(string):
     return num_pairs
 
 
-print(bracket_check(("{m(s[d]m(5}0[c)02]")))
-print(bracket_check("p(y[th[on]{c(our)s}e])"))
+# print(bracket_check(("{m(s[d]m(5}0[c)02]")))
+# print(bracket_check("p(y[th[on]{c(our)s}e])"))
 
 
 # %% 6
@@ -265,56 +513,66 @@ def box_number(N, k):
             coupon += 1
     return box
 
+# theoretical value of expected time to collect k type from N
+# decompose RV T(N,k) into a series of RV of gemotric distribution to calculate its expectation.
+
+
+def ET(N, k):
+    return N*sum(1/(N-t) for t in range(k))
+
 
 # -------------------- #
+plt.cla()
 N = 10
 ks = range(1, N+1)
-ys = [*map(lambda k: box_number(N, k), ks)]
-plt.plot(ks, ys, marker='s')
+ys = [ET(N, k) for k in ks]
+plt.plot(ks, ys, label='theoretical')
+ys = [box_number(N, k) for k in ks]
+plt.plot(ks, ys, marker='s', linestyle=':', color='r', label='simulation')
 plt.legend()
 plt.title("number of boxes to get k types of coupons(N=10)")
 plt.grid(linestyle=':')
 plt.xlabel('k')
 plt.ylabel('expected number of boxes')
 plt.savefig('./img/7-a.png')
-plt.cla()
 
 # -------------------- #
+plt.cla()
 Nmax = 10
 Ns = range(1, Nmax+1)
-ys = [*map(lambda N: box_number(N, N), Ns)]
-plt.plot(Ns, ys, marker='s')
+ys = [ET(N, N) for N in Ns]
+plt.plot(ks, ys, label='theoretical')
+ys = [box_number(N, N) for N in Ns]
+plt.plot(Ns, ys, marker='s', linestyle=':', color='r', label='simulation')
 plt.legend()
 plt.title("number of boxes to get k types of coupons(k=N)")
 plt.grid(linestyle=':')
 plt.xlabel('N')
 plt.ylabel('expected number of boxes')
 plt.savefig('./img/7-b.png')
-plt.cla()
 
 # %% 8
 # Tic-tac-toe
+
+random.seed(20912792)
 
 
 class Player:
     def __init__(self, ai):
         self.ai = ai
 
-    def reset(self, mark=0, rival=None):
+    def config(self, mark=0, rival=None):
         self.mark = mark
         self.rival = rival
+
+    def reset(self):
         self.row_score = [0, 0, 0]
         self.col_score = [0, 0, 0]
         self.diag_score = 0
         self.sub_diag_score = 0
 
     def select(self, vacancies):
-        return self.ai(self, self.rival, vacancies)
-
-    def iswin(self):
-        if 3 in (*self.row_score, *self.col_score, self.diag_score, self.sub_diag_score):
-            return True
-        return False
+        return self.ai(vacancies, self, self.rival)
 
     def score(self, pos):
         i, j = pos
@@ -324,109 +582,115 @@ class Player:
             self.diag_score += 1
         elif i+j == 2:
             self.sub_diag_score += 1
-        return self.iswin()
+
+    def is2win(self, pos):
+        i, j = pos
+        if self.row_score[i] == 2 or self.col_score[j] == 2:
+            return True
+        if i == j and self.diag_score == 2:
+            return True
+        if i+j == 2 and self.sub_diag_score == 2:
+            return True
+        return False
 
 
 def Tictactoe_summary(results):
     turns = len(results)
     results = np.array(results)
-    # [p1 win, p2 win, draw, turns]
+    # [p0 win, p1 win, draw, turns]
     return [*(np.sum(results == x)/turns for x in (0, 1, -1)), turns]
 
 
-@repeat_within(time_tol=1, summary=Tictactoe_summary)
-def tictactoe(p0, p1):
-    players = (p0, p1)
-    p0.reset(mark=0,rival=p1)
-    p1.reset(mark=1,rival=p0)
-    vacancies = [(i, j) for j in range(3) for i in range(3)]
-    who = np.random.randint(2)
-    while vacancies:
-        player = players[who]
-        pos, winner = player.select(vacancies)
-        if winner is not None or player.score(pos):
-            return winner or who
-        vacancies.remove(pos)
-        who = (who+1) % 2
-    return -1
-
-# %% 8-a
+def repeat_within(time_tol, summary):
+    def decor(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            results = []
+            while (time.time() - start_time) <= time_tol:
+                results.append(func(*args, **kwargs))
+            return summary(results)
+        return wrapper
+    return decor
 
 
-def rand_choice(self: Player, rival: Player, vacancies):
-    choice = np.random.randint(len(vacancies))
-    return vacancies[choice], None
+class Tictactoe:
+    def __init__(self, p0: Player, p1: Player):
+        self.players = (p0, p1)
+        p0.config(mark=0, rival=p1)
+        p1.config(mark=1, rival=p0)
+
+    def reset(self):
+        for player in self.players:
+            player.reset()
+        self.vacancies = [(i, j) for j in range(3) for i in range(3)]
+
+    @repeat_within(time_tol=1, summary=Tictactoe_summary)
+    def __call__(self):
+        self.reset()
+        who = random.randint(0, 1)
+        while self.vacancies:
+            player = self.players[who]
+            pos, winner = player.select(self.vacancies)
+            if winner is not None:
+                return winner
+            if player.is2win(pos):
+                return who
+            player.score(pos)
+            self.vacancies.remove(pos)
+            who = (who+1) % 2
+        return -1
+
+
+def rand_choice(vacancies, *args):
+    return random.choice(vacancies), None
 
 
 Alice = Player(ai=rand_choice)
 Bob = Player(ai=rand_choice)
 
-tictactoe(Alice, Bob)
-
-# %% 8-b
+tictactoe = Tictactoe(Alice, Bob)
 
 
-def bob_ai(self, rival, vacancies):
+def bob_ai(vacancies, *args):
     # 1. pick centre
     if (1, 1) in vacancies:
         return (1, 1), None
     # 2. pick randomly
-    return rand_choice(self, rival, vacancies)
+    return rand_choice(vacancies)
 
 
-def alice_ai(self: Player, rival: Player, vacancies):
+def alice_ai(vacancies, self: Player, rival: Player):
     # 1. alice try to win
-    vrs, vcs = zip(*vacancies)
-    for r, s in enumerate(self.row_score):
-        if s != 2:
-            continue
-        if r in vrs:
-            return None, self.mark
-    for c, s in enumerate(self.col_score):
-        if s != 2:
-            continue
-        if c in vcs:
-            return None, self.mark
-
-    if self.diag_score == 2:
-        for r, c in vacancies:
-            if r == c:
-                return None, self.mark
-
-    if self.sub_diag_score == 2:
-        for r, c in vacancies:
-            if r+c == 2:
-                return None, self.mark
+    for pos in vacancies:
+        if self.is2win(pos):
+            return pos, self.mark
 
     # 2. try to let bob win in next turn
-    vacxbob = False
+    posxbob = None
     # (n-1) vacancy for bob to win
     # only 1 vacancy for bob not win
-    for r,c in vacancies:
-        if r==c and rival.diag_score == 2:
+    for pos in vacancies:
+        if rival.is2win(pos):
             continue
-        if r+c==2 and rival.sub_diag_score == 2:
-            continue
-        if rival.row_score[r] == 2:
-            continue
-        if rival.col_score[c] == 2:
-            continue
-        # this (r,c) not for bob to win
-        if vacxbob:
-            # at least 2 vacancy for bob not win
+
+        # this position not for bob to win
+        if posxbob:
+            # at least 2 vacancies for bob not win
             break
-        vacxbob = True
+        posxbob = pos
     else:
-        if vacxbob:
-            return None, rival.mark
+        if posxbob:
+            return posxbob, rival.mark
 
     # 3. pick randomly
-    return rand_choice(self, rival,vacancies)
+    return rand_choice(vacancies)
+
 
 Alice = Player(ai=alice_ai)
 Bob = Player(ai=bob_ai)
 
-tictactoe(Alice, Bob)
+tictactoe_AI = Tictactoe(Alice, Bob)
 
 
 # %% 9
