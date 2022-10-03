@@ -36,7 +36,9 @@ def A_win_k_bullet_fast(num_game, k=1):
     B_round = [1, 2, 3, 4, 5]
     B_killed = 0
     alive_games = num_game
-    for i in range(num_pos):
+    for i in range(max(B_round)+1):
+        if not alive_games:
+            break
         p = k/(num_pos - i)
         # killed_games = np.random.binomial(1,p,size=alive_games).sum() if p < 1 else alive_games
         killed_games = np.random.binomial(
@@ -140,10 +142,11 @@ def repeat(trials=1000, summary=np.mean):
         return wrapper
     return decor
 
-def output_in_list(func):
+
+def return_in_list(func):
     @functools.wraps(func)
-    def wrapper(*args,**kwargs):
-        return list(func(*args,**kwargs))
+    def wrapper(*args, **kwargs):
+        return list(func(*args, **kwargs))
     return wrapper
 
 
@@ -174,7 +177,7 @@ class Player:
         self.previous = self.pos
         self.pos = self.next
 
-    @output_in_list
+    @return_in_list
     def available_pos(self):
         x, y = self.pos
         n = self.market.n
@@ -717,12 +720,12 @@ class TimeitCustom:
         self.average = 0
         self.stdev = 0
 
-    def __call__(self, target, *args, **kwds):
+    def __call__(self, target, *args, **kwargs):
         running_time = []
         for _ in range(self.repeat):
             start_time = time.time()
             for _ in range(self.loops):
-                target(*args, **kwds)
+                target(*args, **kwargs)
             running_time.append(1e9*(time.time() - start_time)/self.loops)
 
         self.average = np.mean(running_time)
@@ -739,5 +742,18 @@ timeit_custom(lambda x: x*x, 1)
 
 
 def quadratic(a,  b,  c):
-    delta_sq = b**2-4*a*c
-    return (-b+delta_sq**.5)/2/a, (-b-delta_sq**.5)/2/a
+    delta = b**2-4*a*c
+    if delta >= 0:
+        return (-b+delta**.5)/2/a, (-b-delta**.5)/2/a
+    return (-b+(-delta)**.5*1j)/2/a, (-b-(-delta)**.5*1j)/2/a
+
+def quadratic_(a,  b,  c):
+    delta = b**2-4*a*c
+    return (-b+delta**.5)/2/a, (-b-delta**.5)/2/a
+
+# it's quite confuzed that:
+# >>> quadratic(1,-2,2)
+# ((1+1j), (1-1j))
+# >>> quadratic_(1,-2,2)
+# ((1+1j), (0.9999999999999999-1j))
+# wondering why?
