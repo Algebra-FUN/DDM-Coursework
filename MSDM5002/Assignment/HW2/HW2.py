@@ -1,14 +1,17 @@
 # %%0
 # import all needed module at this cell
 from matplotlib import pyplot as plt
+from matplotlib import style
 import shutil
 import re
 import os
 import time
 import random
 import numpy as np
-from functools import wraps
+import functools
 from tqdm import tqdm
+
+style.use('seaborn')
 
 # %%1
 # Russian roulette
@@ -128,7 +131,7 @@ random.seed(20912792)
 
 def repeat(trials=1000, summary=np.mean):
     def decor(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             results = []
             for _ in range(trials):
@@ -136,6 +139,12 @@ def repeat(trials=1000, summary=np.mean):
             return summary(results)
         return wrapper
     return decor
+
+def output_in_list(func):
+    @functools.wraps(func)
+    def wrapper(*args,**kwargs):
+        return list(func(*args,**kwargs))
+    return wrapper
 
 
 DIRECTIONS = ((1, 0), (-1, 0), (0, 1), (0, -1))
@@ -165,6 +174,7 @@ class Player:
         self.previous = self.pos
         self.pos = self.next
 
+    @output_in_list
     def available_pos(self):
         x, y = self.pos
         n = self.market.n
@@ -173,14 +183,6 @@ class Player:
             # backward is always disabled
             if 0 <= x_ <= n and 0 <= y_ <= n and (x_, y_) != self.previous:
                 yield (x_, y_)
-
-    def move_to(self):
-        x, y = self.pos
-        Dx = self.other.pos[0] - x
-        Dy = self.other.pos[1] - y
-        dx = Dx//abs(Dx) if Dx else 0
-        dy = Dy//abs(Dy) if Dy else 0
-        return (x+dx, y+dy)
 
 
 class SuperMarket:
@@ -199,7 +201,7 @@ class SuperMarket:
         return self.p0.pos != self.p1.pos
 
     @repeat(trials=1000)
-    def __call__(self):
+    def go(self):
         self.reset()
         t = 0
         while self.not_meet():
@@ -219,7 +221,7 @@ def blind(self: Player):
     return False
 
 
-def line_sight(self: Player):
+def line_search(self: Player):
     if self.pos[0] == self.other.pos[0] or self.pos[1] == self.other.pos[1]:
         return True
     return False
@@ -227,42 +229,48 @@ def line_sight(self: Player):
 
 def rand_find(self: Player):
     if self.look():
-        return self.move_to()
-    return random.choice(list(self.available_pos()))
+        x, y = self.pos
+        Dx = self.other.pos[0] - x
+        Dy = self.other.pos[1] - y
+        dx = Dx//abs(Dx) if Dx else 0
+        dy = Dy//abs(Dy) if Dy else 0
+        return (x+dx, y+dy)
+    return random.choice(self.available_pos())
 
 
-# %% a)
+# a)
 ns = [*range(2, 21)]
 
 plt.cla()
 ts = []
 for n in tqdm(ns, desc="2-a-only Alice walks"):
-    Alice = Player((0, n), line_sight, rand_find)
+    Alice = Player((0, n), line_search, rand_find)
     Bob = Player((n, 0), blind, stand)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
+    ts.append(supermarket.go())
 plt.plot(ns, ts, marker='s', label="only Alice walks")
 
 ts = []
 for n in tqdm(ns, desc="2-a-both Alice and Bob walk"):
-    Alice = Player((0, n), line_sight, rand_find)
-    Bob = Player((n, 0), line_sight, rand_find)
+    Alice = Player((0, n), line_search, rand_find)
+    Bob = Player((n, 0), line_search, rand_find)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
-plt.plot(ns, ts, marker='x', label="both Alice and Bob walk")
+    ts.append(supermarket.go())
+plt.plot(ns, ts, marker='o', label="both Alice and Bob walk")
 
 
 plt.legend()
-plt.title("Average finding time over 1000 trials")
-plt.grid(linestyle=':')
+plt.title("a) Average finding time over 1000 trials")
+plt.grid(True)
 plt.xlabel('n')
 plt.ylabel('finding time')
 plt.savefig('./img/2-a.png')
+plt.show()
 
 
-# %% b)
+# b)
 n = 19
 ks = [*range((n+1)//2)]
 
@@ -271,72 +279,74 @@ ts = []
 for k in tqdm(ks, desc="2-b-only Alice walks"):
     a = (n-1)//2-k
     b = (n+1)//2+k
-    Alice = Player((a, b), line_sight, rand_find)
+    Alice = Player((a, b), line_search, rand_find)
     Bob = Player((b, a), blind, stand)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
+    ts.append(supermarket.go())
 plt.plot(ks, ts, marker='s', label="only Alice walks")
 
 ts = []
 for k in tqdm(ks, desc="2-b-both Alice and Bob walk"):
     a = (n-1)//2-k
     b = (n+1)//2+k
-    Alice = Player((a, b), line_sight, rand_find)
-    Bob = Player((b, a), line_sight, rand_find)
+    Alice = Player((a, b), line_search, rand_find)
+    Bob = Player((b, a), line_search, rand_find)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
-plt.plot(ks, ts, marker='x', label="both Alice and Bob walk")
+    ts.append(supermarket.go())
+plt.plot(ks, ts, marker='o', label="both Alice and Bob walk")
 
 plt.legend()
-plt.title("Average finding time over 1000 trials")
-plt.grid(linestyle=':')
+plt.title("b) Average finding time over 1000 trials")
+plt.grid(True)
 plt.xlabel('k')
 plt.ylabel('finding time')
 plt.savefig('./img/2-b.png')
+plt.show()
 
-# %% c)
+# c)
 
 
-def poor_forward_sight(self: Player):
+def poor_forward_search(self: Player):
     for pos in self.available_pos():
         if self.other.pos == pos:
             return True
     return False
 
 
-# %% c) -a
+# c) -a
 ns = [*range(2, 21)]
 
 plt.cla()
 ts = []
 for n in tqdm(ns, desc="2-c-a-only Alice walks"):
-    Alice = Player((0, n), poor_forward_sight, rand_find)
+    Alice = Player((0, n), poor_forward_search, rand_find)
     Bob = Player((n, 0), blind, stand)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
+    ts.append(supermarket.go())
 plt.plot(ns, ts, marker='s', label="only Alice walks")
 
 ts = []
 for n in tqdm(ns, desc="2-c-a-both Alice and Bob walk"):
-    Alice = Player((0, n), poor_forward_sight, rand_find)
-    Bob = Player((n, 0), poor_forward_sight, rand_find)
+    Alice = Player((0, n), poor_forward_search, rand_find)
+    Bob = Player((n, 0), poor_forward_search, rand_find)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
-plt.plot(ns, ts, marker='x', label="both Alice and Bob walk")
+    ts.append(supermarket.go())
+plt.plot(ns, ts, marker='o', label="both Alice and Bob walk")
 
 
 plt.legend()
-plt.title("Average finding time over 1000 trials")
-plt.grid(linestyle=':')
+plt.title("c)-a: Average finding time over 1000 trials")
+plt.grid(True)
 plt.xlabel('n')
 plt.ylabel('finding time')
 plt.savefig('./img/2-c-a.png')
+plt.show()
 
-# %% c) -b
+# c) -b
 n = 19
 ks = [*range((n+1)//2)]
 
@@ -345,30 +355,31 @@ ts = []
 for k in tqdm(ks, desc="2-c-b-only Alice walks"):
     a = (n-1)//2-k
     b = (n+1)//2+k
-    Alice = Player((a, b), poor_forward_sight, rand_find)
+    Alice = Player((a, b), poor_forward_search, rand_find)
     Bob = Player((b, a), blind, stand)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
+    ts.append(supermarket.go())
 plt.plot(ks, ts, marker='s', label="only Alice walks")
 
 ts = []
 for k in tqdm(ks, desc="2-c-b-both Alice and Bob walk"):
     a = (n-1)//2-k
     b = (n+1)//2+k
-    Alice = Player((a, b), poor_forward_sight, rand_find)
-    Bob = Player((b, a), poor_forward_sight, rand_find)
+    Alice = Player((a, b), poor_forward_search, rand_find)
+    Bob = Player((b, a), poor_forward_search, rand_find)
 
     supermarket = SuperMarket(n, Alice, Bob)
-    ts.append(supermarket())
-plt.plot(ks, ts, marker='x', label="both Alice and Bob walk")
+    ts.append(supermarket.go())
+plt.plot(ks, ts, marker='o', label="both Alice and Bob walk")
 
 plt.legend()
-plt.title("Average finding time over 1000 trials")
-plt.grid(linestyle=':')
+plt.title("c)-b: Average finding time over 1000 trials")
+plt.grid(True)
 plt.xlabel('k')
 plt.ylabel('finding time')
 plt.savefig('./img/2-c-b.png')
+plt.show()
 
 
 # %%3
@@ -489,7 +500,7 @@ class Box:
 
 def repeat_within(time_tol=0.1, summary=np.mean):
     def decor(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start_time = time.time()
             results = []
@@ -521,7 +532,7 @@ def ET(N, k):
     return N*sum(1/(N-t) for t in range(k))
 
 
-# -------------------- #
+# a)
 plt.cla()
 N = 10
 ks = range(1, N+1)
@@ -531,12 +542,13 @@ ys = [box_number(N, k) for k in ks]
 plt.plot(ks, ys, marker='s', linestyle=':', color='r', label='simulation')
 plt.legend()
 plt.title("number of boxes to get k types of coupons(N=10)")
-plt.grid(linestyle=':')
+plt.grid(True)
 plt.xlabel('k')
 plt.ylabel('expected number of boxes')
 plt.savefig('./img/7-a.png')
+plt.show()
 
-# -------------------- #
+# b)
 plt.cla()
 Nmax = 10
 Ns = range(1, Nmax+1)
@@ -546,10 +558,11 @@ ys = [box_number(N, N) for N in Ns]
 plt.plot(Ns, ys, marker='s', linestyle=':', color='r', label='simulation')
 plt.legend()
 plt.title("number of boxes to get k types of coupons(k=N)")
-plt.grid(linestyle=':')
+plt.grid(True)
 plt.xlabel('N')
 plt.ylabel('expected number of boxes')
 plt.savefig('./img/7-b.png')
+plt.show()
 
 # %% 8
 # Tic-tac-toe
@@ -603,7 +616,7 @@ def Tictactoe_summary(results):
 
 def repeat_within(time_tol, summary):
     def decor(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start_time = time.time()
             results = []
