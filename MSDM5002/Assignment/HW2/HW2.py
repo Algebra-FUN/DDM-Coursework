@@ -505,10 +505,13 @@ def repeat_within(time_tol=0.1, summary=np.mean):
     def decor(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            start_time = time.time()
+            used_time = 0
             results = []
-            while (time.time() - start_time) <= time_tol:
-                results.append(func(*args, **kwargs))
+            while used_time < time_tol:
+                start_time = time.time()
+                result = func(*args, **kwargs)
+                used_time += time.time()-start_time
+                results.append(result)
             return summary(results)
         return wrapper
     return decor
@@ -516,14 +519,14 @@ def repeat_within(time_tol=0.1, summary=np.mean):
 
 @repeat_within(time_tol=0.1, summary=np.mean)
 def box_number(N, k):
-    coupon_collection = {}
+    coupon_collection = set()
     coupon = 0
     box = 0
     while coupon < k:
         item = Box(N).open()
         box += 1
-        if not item in coupon_collection:
-            coupon_collection[item] = 1
+        if item not in coupon_collection:
+            coupon_collection.add(item)
             coupon += 1
     return box
 
@@ -621,10 +624,13 @@ def repeat_within(time_tol, summary):
     def decor(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            start_time = time.time()
+            used_time = 0
             results = []
-            while (time.time() - start_time) <= time_tol:
-                results.append(func(*args, **kwargs))
+            while used_time < time_tol:
+                start_time = time.time()
+                result = func(*args, **kwargs)
+                used_time += time.time()-start_time
+                results.append(result)
             return summary(results)
         return wrapper
     return decor
@@ -666,6 +672,8 @@ Alice = Player(ai=rand_choice)
 Bob = Player(ai=rand_choice)
 
 tictactoe = Tictactoe(Alice, Bob)
+# >>> tictactoe()
+# [0.3979030224764013, 0.39796451741844235, 0.20413246010515634, 65046]
 
 
 def bob_ai(vacancies, *args):
@@ -707,6 +715,8 @@ Alice = Player(ai=alice_ai)
 Bob = Player(ai=bob_ai)
 
 tictactoe_AI = Tictactoe(Alice, Bob)
+# >>> tictactoe_AI()
+# [0.54723829451075, 0.39095159809552277, 0.06181010739372718, 46837]
 
 
 # %% 9
