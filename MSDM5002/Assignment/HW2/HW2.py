@@ -599,7 +599,7 @@ class Player:
         self.col_score[j] += 1
         if i == j:
             self.diag_score += 1
-        elif i+j == 2:
+        if i+j == 2:
             self.sub_diag_score += 1
 
     def is2win(self, pos):
@@ -696,16 +696,7 @@ def alice_ai(vacancies, self: Player, rival: Player):
     # only 1 vacancy for bob not win
     for pos in vacancies:
         if rival.is2win(pos):
-            continue
-
-        # this position not for bob to win
-        if posxbob:
-            # at least 2 vacancies for bob not win
-            break
-        posxbob = pos
-    else:
-        if posxbob:
-            return posxbob, rival.mark
+            return pos, None
 
     # 3. pick randomly
     return rand_choice(vacancies)
