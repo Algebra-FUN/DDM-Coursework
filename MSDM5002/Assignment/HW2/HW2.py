@@ -387,6 +387,8 @@ plt.show()
 
 # %%3
 # File organization
+
+# set a WORK_DIR for your env
 WORK_DIR = f"{os.getcwd()}\\materials\\question3"
 
 MONTH = ("JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -411,7 +413,7 @@ def organize(work_dir=WORK_DIR):
         shutil.move(f"{work_dir}\\{file}", f"{target_dir}\\{new_file}")
 
 
-# organize(WORK_DIR)
+# >>> organize(WORK_DIR)
 
 # %%4
 # Frequency analysis
@@ -472,8 +474,11 @@ def checkband(A, n, sign=1):
             return k
 
 
-def bandwidth(A):
-    assert A.ndim == 2
+def bandwidth(A: np.ndarray):
+    if not isinstance(A, np.ndarray):
+        raise TypeError("Input should be a numpy matrix!")
+    if A.ndim != 2:
+        raise TypeError("Input should be a matrix!")
     m, n = A.shape
     bL = checkband(A, m, -1)
     bU = checkband(A, n, 1)
@@ -530,11 +535,10 @@ def box_number(N, k):
             coupon += 1
     return box
 
-# theoretical value of expected time to collect k type from N
-# decompose RV T(N,k) into a series of RV of gemotric distribution to calculate its expectation.
-
 
 def ET(N, k):
+    # theoretical value of expected time to collect k type from N
+    # decompose RV T(N,k) into a series of RV of gemotric distribution to calculate its expectation.
     return N*sum(1/(N-t) for t in range(k))
 
 
@@ -624,13 +628,10 @@ def repeat_within(time_tol, summary):
     def decor(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            used_time = 0
             results = []
-            while used_time < time_tol:
-                start_time = time.time()
-                result = func(*args, **kwargs)
-                used_time += time.time()-start_time
-                results.append(result)
+            start_time = time.time()
+            while time.time()-start_time < time_tol:
+                results.append(func(*args, **kwargs))
             return summary(results)
         return wrapper
     return decor
@@ -654,8 +655,8 @@ class Tictactoe:
         while self.vacancies:
             player = self.players[who % 2]
             pos, winner = player.select(self.vacancies)
-            if winner is not None:
-                return winner
+            if winner:
+                return winner.mark
             if player.is2win(pos):
                 return player.mark
             player.score(pos)
@@ -673,7 +674,7 @@ Bob = Player(ai=rand_choice)
 
 tictactoe = Tictactoe(Alice, Bob)
 # >>> tictactoe()
-# [0.3979030224764013, 0.39796451741844235, 0.20413246010515634, 65046]
+# [0.4355459934402552, 0.43583185388017937, 0.1286221526795655, 66466]
 
 
 def bob_ai(vacancies, *args):
@@ -688,7 +689,7 @@ def alice_ai(vacancies, self: Player, rival: Player):
     # 1. alice try to win
     for pos in vacancies:
         if self.is2win(pos):
-            return pos, self.mark
+            return pos, self
 
     # 2. try to stop bob from win
     for pos in vacancies:
@@ -704,7 +705,7 @@ Bob = Player(ai=bob_ai)
 
 tictactoe_AI = Tictactoe(Alice, Bob)
 # >>> tictactoe_AI()
-# [0.54723829451075, 0.39095159809552277, 0.06181010739372718, 46837]
+# [0.7405005071113522, 0.033587282119017854, 0.22591221076962992, 42397]
 
 
 # %% 9
