@@ -101,25 +101,25 @@ for n in range(num_test):
     print(n, end=' ')
     num_game = 10**5
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     P1.append(A_win_1_bullet(num_game))
-    T1 += (time.time()-start_time)
+    T1 += (time.perf_counter()-start_time)
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     P2.append(A_win_1_bullet_fast(num_game))
-    T2 += (time.time()-start_time)
+    T2 += (time.perf_counter()-start_time)
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     P3.append(A_win_3_bullet(num_game))
-    T3 += (time.time()-start_time)
+    T3 += (time.perf_counter()-start_time)
 
-    start_time = time.time()
+    start_time = time.perf_counter()
     P4.append(A_win_3_bullet_fast(num_game))
-    T4 += (time.time()-start_time)
+    T4 += (time.perf_counter()-start_time)
 
 print()
-print('T2/T1 =', T2/T1)
-print('T4/T3 =', T4/T3)
+print('T1/T2 =', T1/T2)
+print('T3/T4 =', T3/T4)
 print(min(P1), '<= P1 <=', max(P1))
 print(min(P2), '<= P2 <=', max(P2))
 print(min(P3), '<= P3 <=', max(P3))
@@ -453,16 +453,22 @@ def bracket_check(string):
         if char in LEFTS:
             stack.append(char)
         elif char in RIGHTS:
-            if char == MAPPING[stack[-1]]:
+            if stack and char == MAPPING[stack[-1]]:
                 stack.pop()
                 num_pairs += 1
             else:
                 return -1
-    return num_pairs
+    return -1 if stack else num_pairs
 
 
-# print(bracket_check(("{m(s[d]m(5}0[c)02]")))
-# print(bracket_check("p(y[th[on]{c(our)s}e])"))
+# >>> bracket_check(("{m(s[d]m(5}0[c)02]"))
+# -1
+# >>> bracket_check("p(y[th[on]{c(our)s}e])")
+# 5
+# >>> bracket_check("p(y[th[on]{c(our)s}e]){")
+# -1
+# >>> bracket_check("p(y[th[on]{c(our)s}e])}")
+# -1
 
 
 # %% 6
