@@ -200,14 +200,11 @@ class SuperMarket:
         self.p0.reset()
         self.p1.reset()
 
-    def not_meet(self):
-        return self.p0.pos != self.p1.pos
-
     @repeat(trials=1000)
     def go(self):
         self.reset()
         t = 0
-        while self.not_meet():
+        while self.p0.pos != self.p1.pos:
             self.p0.walk()
             self.p1.walk()
             self.p0.update()
