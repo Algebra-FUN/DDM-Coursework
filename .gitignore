@@ -2,5 +2,4 @@
 MSDMs
 *.zip
 *.pdf
-tmp.gif
-tmp.py
+tmp.*
