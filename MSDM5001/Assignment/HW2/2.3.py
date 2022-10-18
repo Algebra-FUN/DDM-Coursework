@@ -6,11 +6,8 @@ from argparse import ArgumentParser
 
 def f(seed):
     random.seed(seed)
-    x = random.random()
-    y = random.random()
-    if x**2 + y**2 < 1:
-        return 1
-    return 0
+    x, y = random.random(), random.random()
+    return 1 if x**2 + y**2 < 1 else 0
 
 
 if __name__ == "__main__":
@@ -22,4 +19,5 @@ if __name__ == "__main__":
     seeds = np.random.random(size=args.n)
     with Pool() as p:
         result = p.map(f, seeds)
-    print(4*np.mean(result))
+    pi = 4*np.mean(result)
+    print(pi)
