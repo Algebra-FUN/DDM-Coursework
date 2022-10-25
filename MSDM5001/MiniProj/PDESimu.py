@@ -1,6 +1,8 @@
 import numpy as np
 from numba import njit, prange, set_num_threads
 import time 
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 
 @njit(parallel=True)
@@ -40,6 +42,24 @@ class PDESimu:
             self.Ts.append(T)
         print(f"Target PDE simulation finished in {time.perf_counter()-start_time}s with {nprocess} processes.")
 
+    def anim(self):
+        fig,ax = plt.subplots()
+        img = ax.imshow(self.Ts[0], cmap="coolwarm")
+        cbar = fig.colorbar(img)
+        title = ax.set_title("T(t=0)")
+
+        def draw_init():
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+
+        def draw_T(f):
+            title.set_text(f"T(t={self.ts[f]:.2f})")
+            img.set_data(self.Ts[f])
+        
+        anim = FuncAnimation(fig, draw_T,
+                            init_func=draw_init, frames=self.its)
+        return anim
+
 
 if __name__ == "__main__":
     nx, ny = 12, 12
@@ -49,5 +69,5 @@ if __name__ == "__main__":
     T0[0, :] = 40
     T0[nx-1, :] = 40
 
-    simu = PDESimu(T0, 1, 1, .1, .1)
-    print(simu.Ts[-1])
+    self = PDESimu(T0, 1, 1, .1, .1)
+    print(self.Ts[-1])
