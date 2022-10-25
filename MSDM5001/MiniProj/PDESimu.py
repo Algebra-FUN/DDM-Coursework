@@ -29,7 +29,6 @@ def pde_step(T, K, dt, h):
 
 class PDESimu:
     def __init__(self, T0=None, t_end=1, K=.1, dt=.01, h=.1, nprocess=4):
-        start_time = time.perf_counter()
         self.T0 = T0
         self.ts = np.arange(0, t_end+dt, dt)
         self.its = np.arange(0, len(self.ts))
@@ -38,11 +37,14 @@ class PDESimu:
         self.nprocess = nprocess
         T = T0
 
-        set_num_threads(nprocess)
+        set_num_threads(self.nprocess)
+        self.used_time = 0
+        start_time = time.perf_counter()
         for _ in self.its[1:]:
+            start_time = time.perf_counter()
             T = pde_step(T, K, dt, h)
+            self.used_time += time.perf_counter()-start_time
             self.Ts.append(T)
-        self.finished_time = time.perf_counter()-start_time
 
     def anim(self, step=1):
         fig, ax = plt.subplots()
