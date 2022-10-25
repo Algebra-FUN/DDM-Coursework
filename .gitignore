@@ -3,3 +3,4 @@ MSDMs
 *.zip
 *.pdf
 tmp.*
+__pycache__
