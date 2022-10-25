@@ -1,24 +1,24 @@
 import numpy as np
 from numba import njit, prange, set_num_threads
-import time 
+import time
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 
 @njit(parallel=True)
-def heat_divergence(T, dx):
+def heat_divergence(T, h):
     nx, ny = T.shape
     divT = np.zeros_like(T)
     for ix in prange(1, nx-1):
         for iy in prange(1, ny-1):
             divT[ix, iy] = (T[ix-1, iy]+T[ix+1, iy] +
-                            T[ix, iy+1]+T[ix, iy-1]-4*T[ix, iy])/(dx**2)
+                            T[ix, iy+1]+T[ix, iy-1]-4*T[ix, iy])/(h**2)
     return divT
 
 
 @njit(parallel=True)
-def pde_step(T, K, dt, dx):
-    divT = heat_divergence(T, dx)
+def pde_step(T, K, dt, h):
+    divT = heat_divergence(T, h)
     newT = np.copy(T)
     nx, ny = T.shape
     for ix in prange(1, nx-1):
@@ -28,46 +28,38 @@ def pde_step(T, K, dt, dx):
 
 
 class PDESimu:
-    def __init__(self, T0=None, Tend=1, K=.1, dt=.01, dx=.1,nprocess=4):
+    def __init__(self, T0=None, t_end=1, K=.1, dt=.01, h=.1, nprocess=4):
+        start_time = time.perf_counter()
         self.T0 = T0
-        self.ts = np.arange(0, Tend, dt)
+        self.ts = np.arange(0, t_end+dt, dt)
         self.its = np.arange(0, len(self.ts))
         self.Ts = [T0]
+        self.h = h
+        self.nprocess = nprocess
         T = T0
 
         set_num_threads(nprocess)
-        start_time = time.perf_counter()
         for _ in self.its[1:]:
-            T = pde_step(T, K, dt, dx)
+            T = pde_step(T, K, dt, h)
             self.Ts.append(T)
-        print(f"Target PDE simulation finished in {time.perf_counter()-start_time}s with {nprocess} processes.")
+        self.finished_time = time.perf_counter()-start_time
 
-    def anim(self):
-        fig,ax = plt.subplots()
+    def anim(self, step=1):
+        fig, ax = plt.subplots()
         img = ax.imshow(self.Ts[0], cmap="coolwarm")
         cbar = fig.colorbar(img)
         title = ax.set_title("T(t=0)")
 
         def draw_init():
             ax.set_xlabel("x")
+            ax.set_xticklabels([x*self.h for x in ax.get_xticks()])
             ax.set_ylabel("y")
+            ax.set_yticklabels([y*self.h for y in ax.get_yticks()])
 
         def draw_T(f):
-            title.set_text(f"T(t={self.ts[f]:.2f})")
+            title.set_text(f"T(t={self.ts[f]:.1f}s)")
             img.set_data(self.Ts[f])
-        
+
         anim = FuncAnimation(fig, draw_T,
-                            init_func=draw_init, frames=self.its)
+                             init_func=draw_init, frames=self.its[::step])
         return anim
-
-
-if __name__ == "__main__":
-    nx, ny = 12, 12
-    T0 = np.zeros((nx, ny))
-    T0[:, 0] = 20
-    T0[:, ny-1] = 40
-    T0[0, :] = 40
-    T0[nx-1, :] = 40
-
-    self = PDESimu(T0, 1, 1, .1, .1)
-    print(self.Ts[-1])
