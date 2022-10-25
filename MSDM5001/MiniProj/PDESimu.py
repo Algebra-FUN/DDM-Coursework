@@ -6,24 +6,12 @@ from matplotlib.animation import FuncAnimation
 
 
 @njit(parallel=True)
-def heat_divergence(T, h):
-    nx, ny = T.shape
-    divT = np.zeros_like(T)
-    for ix in prange(1, nx-1):
-        for iy in prange(1, ny-1):
-            divT[ix, iy] = (T[ix-1, iy]+T[ix+1, iy] +
-                            T[ix, iy+1]+T[ix, iy-1]-4*T[ix, iy])/(h**2)
-    return divT
-
-
-@njit(parallel=True)
-def pde_step(T, K, dt, h):
-    divT = heat_divergence(T, h)
-    newT = np.copy(T)
+def pde_step(T, newT ,K, dt, h):
     nx, ny = T.shape
     for ix in prange(1, nx-1):
         for iy in prange(1, ny-1):
-            newT[ix, iy] += K*divT[ix, iy]*dt
+            newT[ix, iy] += K*(T[ix-1, iy]+T[ix+1, iy] +
+                               T[ix, iy+1]+T[ix, iy-1]-4*T[ix, iy])/(h**2)*dt
     return newT
 
 
@@ -41,8 +29,9 @@ class PDESimu:
         self.used_time = 0
         start_time = time.perf_counter()
         for _ in self.its[1:]:
+            newT = np.copy(T)
             start_time = time.perf_counter()
-            T = pde_step(T, K, dt, h)
+            T = pde_step(T, newT, K, dt, h)
             self.used_time += time.perf_counter()-start_time
             self.Ts.append(T)
 
