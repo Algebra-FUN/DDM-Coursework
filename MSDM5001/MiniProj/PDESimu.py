@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 
 @njit(parallel=True)
-def pde_step(T, newT ,K, dt, h):
+def pde_step(T, newT, K, dt, h):
     nx, ny = T.shape
     for ix in prange(1, nx-1):
         for iy in prange(1, ny-1):
@@ -27,7 +27,6 @@ class PDESimu:
 
         set_num_threads(self.nprocess)
         self.used_time = 0
-        start_time = time.perf_counter()
         for _ in self.its[1:]:
             newT = np.copy(T)
             start_time = time.perf_counter()
@@ -38,7 +37,7 @@ class PDESimu:
     def anim(self, step=1):
         fig, ax = plt.subplots()
         img = ax.imshow(self.Ts[0], cmap="coolwarm")
-        cbar = fig.colorbar(img)
+        fig.colorbar(img)
         title = ax.set_title("T(t=0)")
 
         def draw_init():
@@ -51,6 +50,5 @@ class PDESimu:
             title.set_text(f"T(t={self.ts[f]:.1f}s)")
             img.set_data(self.Ts[f])
 
-        anim = FuncAnimation(fig, draw_T,
+        return FuncAnimation(fig, draw_T,
                              init_func=draw_init, frames=self.its[::step])
-        return anim
