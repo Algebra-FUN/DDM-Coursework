@@ -27,7 +27,6 @@ class PDESimu:
 
         set_num_threads(self.nprocess)
         self.used_time = 0
-        start_time = time.perf_counter()
         for _ in self.its[1:]:
             newT = np.copy(T)
             start_time = time.perf_counter()
@@ -38,7 +37,7 @@ class PDESimu:
     def anim(self, step=1):
         fig, ax = plt.subplots()
         img = ax.imshow(self.Ts[0], cmap="coolwarm")
-        cbar = fig.colorbar(img)
+        fig.colorbar(img)
         title = ax.set_title("T(t=0)")
 
         def draw_init():
