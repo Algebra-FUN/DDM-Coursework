@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 
 @njit(parallel=True)
-def pde_step(T, newT ,K, dt, h):
+def pde_step(T, newT, K, dt, h):
     nx, ny = T.shape
     for ix in prange(1, nx-1):
         for iy in prange(1, ny-1):
@@ -51,6 +51,5 @@ class PDESimu:
             title.set_text(f"T(t={self.ts[f]:.1f}s)")
             img.set_data(self.Ts[f])
 
-        anim = FuncAnimation(fig, draw_T,
+        return FuncAnimation(fig, draw_T,
                              init_func=draw_init, frames=self.its[::step])
-        return anim
