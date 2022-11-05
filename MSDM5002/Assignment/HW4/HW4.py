@@ -34,8 +34,7 @@ def plot_box(ax, x0, y0, z0, l, **kwargs):
     d = l / 2
     x = x0 + np.array([-d, -d, d, d, -d]*2).reshape(2, 5)
     y = y0 + np.array([-d, d, d, -d, -d]*2).reshape(2, 5)
-    ds = d*np.ones(5)
-    z = z0 + np.vstack((ds, -ds))
+    z = z0 + d * np.vstack((np.ones(5), -np.ones(5)))
     return ax.plot_surface(x, y, z, **kwargs)
 
 
