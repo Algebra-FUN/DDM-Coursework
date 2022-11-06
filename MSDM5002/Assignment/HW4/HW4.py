@@ -1,15 +1,15 @@
 # %% 0
 # Import all dependency
 import math
+import numpy as np
 from skimage.measure import marching_cubes
 from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation, FFMpegWriter
 from functools import partial
-import matplotlib.pyplot as plt
-import numpy as np
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
-# %% 1
-# A sphere on a cube
+plt.rcParams["animation.html"] = "jshtml"
+plt.rcParams['animation.ffmpeg_path'] = r'C:\Program Files\ffmpeg\bin\ffmpeg.exe'
 
 
 def bind(cls):
@@ -17,6 +17,9 @@ def bind(cls):
         setattr(cls, func.__name__, func)
         return func
     return decor
+
+# %% 1
+# A sphere on a cube
 
 
 @bind(Axes3D)
@@ -62,6 +65,7 @@ ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 
+plt.savefig("figs/q1.jpg")
 plt.show()
 
 # %% 2
@@ -109,5 +113,52 @@ x, z = np.meshgrid(*[ps]*2)
 cross = heart(x, 0, z)
 ax.contour(x, cross, z, zdir="y", levels=0, offset=2, color="black")
 
+plt.savefig("figs/q2.jpg")
 plt.show()
 # %% 3
+
+fig, ax = plt.subplots()
+
+ax.set_xlim((-1, 3))
+ax.set_ylim((-1, 3))
+ax.set_aspect('equal')
+
+ax.add_patch(plt.Circle((0, 0), 1, fill=False, color='b'))
+plt.plot((-1, 1), (0, 0), c='b')
+plt.plot((0, 0), (-1, 1), c='b')
+text = plt.text(2, 2, "$t=0$")
+star, = plt.plot(1, 0, marker="*", c='b')
+star20, = plt.plot((0, 1), (0, 0), c='b')
+gl, = plt.plot((1, 1), (0, 0), c='g')
+rl, = plt.plot((1, 0), (0, 0), c='r')
+gwave, = plt.plot(0, 0, c='g')
+rwave, = plt.plot(0, 0, c='r')
+
+omega = 0.1
+v = 0.02
+
+
+def eachframe(t):
+    theta = omega*t
+    text.set_text(f"$t={t}$")
+    x, y = np.cos(-theta), np.sin(-theta)
+    star.set_data(x, y)
+    star20.set_data((0, x), (0, y))
+    gl.set_data((x, x), (y, 0))
+    rl.set_data((x, 0), (y, y))
+
+    lags = np.linspace(0, 200, 100)
+    gy = np.sin(-omega*(t-lags))
+    gx = x + v*lags
+    gwave.set_data(gx, gy)
+
+    rx = np.cos(-omega*(t-lags))
+    ry = y + v*lags
+    rwave.set_data(rx, ry)
+
+
+anim = FuncAnimation(fig, eachframe, frames=np.arange(0, 100))
+
+FFwriter = FFMpegWriter(fps=12)
+anim.save("figs/q3.mp4", writer=FFwriter)
+anim
