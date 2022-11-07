@@ -20,6 +20,6 @@ if __name__ == "__main__":
     h = (b-a)/n
     with Pool() as pool:
         xs = pool.map(x, [(a, h, k) for k in range(1, n)])
-        fs = pool.map(f,xs)
-    pi = h/2*(f(0)+f(1)+2*sum(fs))
-    print(pi)
+        fs = pool.map(f, xs)
+    pi = h/2*(f(a)+f(b)+2*sum(fs))
+    print(f"Estimated Pi value is {pi}, given by the integral method.")

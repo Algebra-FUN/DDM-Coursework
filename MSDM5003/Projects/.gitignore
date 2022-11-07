@@ -1,0 +1,8 @@
+fig1.eps
+*.txt
+*.gz
+*.log
+*.aux
+.vscode
+*.out
+submission
