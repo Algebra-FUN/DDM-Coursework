@@ -1,0 +1,384 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{beramono}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[colorlinks=true, linkcolor=blue]{hyperref}
+
+%%
+%% Julia definition (c) 2014 Jubobs
+%%
+\lstdefinelanguage{Julia}%
+  {morekeywords={abstract,break,case,catch,const,continue,do,else,elseif,%
+      end,export,false,for,function,immutable,import,importall,if,in,%
+      macro,module,otherwise,quote,return,switch,true,try,type,typealias,%
+      using,while},%
+   sensitive=true,%
+   alsoother={$},%
+   morecomment=[l]\#,%
+   morecomment=[n]{\#=}{=\#},%
+   morestring=[s]{"}{"},%
+   morestring=[m]{'}{'},%
+}[keywords,comments,strings]%
+
+\lstset{%
+    language         = Julia,
+    basicstyle       = \ttfamily,
+    keywordstyle     = \bfseries\color{blue},
+    stringstyle      = \color{magenta},
+    commentstyle     = \color{ForestGreen},
+    showstringspaces = false,
+}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{Stochastic simulation for active Brownian particles}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Yifei Fan}
+%
+\authorrunning{Y. Fan et al.}
+% First names are abbreviated in the running head._R
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{The Hong Kong University of Science and Technology, Hong Kong SAR,China\\
+    \email{yfanba@ust.hk}}
+%
+\maketitle              % typeset the header of the contribution
+
+\section{Introduction}
+Self-propelled  Brownian  particles  have  come  under  the  spotlight  of  the  physical  and  biophysical 
+research communities. These active particles are biological or man-made microscopic and nanoscopic 
+objects that can propel themselves by taking up energy from their environment and converting it into 
+directed motion. On the one hand, self-propulsion is a common feature in microorganisms and allows 
+for a more efficient exploration of the environment when looking for nutrients or running away from 
+toxic substances. On the other hand, tremendous progress has recently been made toward the fabrication 
+of  artificial  microswimmers  and  nanoswimmers  that  can  self-propel  based  on  different  propulsion 
+mechanisms\cite{ref:ap}. 
+
+In this article, a series of simulation will be carried out to reseach the behaviour of active Brownian particles.
+
+\section{Model of active Brownian motion}
+Consider  a  self-propelled  particle  with  velocity $v$.  The  direction  of  motion  is  subject  to  rotational
+diffusion,  which  leads  to  a  coupling  between  rotation  and  translation.  The  corresponding  stochastic
+differential equations in 2-dimensional space are
+\begin{equation}
+    \label{eq:xode}
+    \frac{dx}{dt}=v\cos{\phi},
+\end{equation}
+\begin{equation}
+    \label{eq:yode}
+    \frac{dy}{dt}=v\sin{\phi},
+\end{equation}
+\begin{equation}
+    \label{eq:phiode}
+    \frac{d\phi}{dt}=\sqrt{2D_R}\xi.
+\end{equation}
+Here the particle position is at $\vec{r}(t)=\left(x(t),y(t)\right)$
+and the direction of motion is $\vec{n}(t)=\left(\cos{\phi(t)},\sin{\phi(t)}\right)$
+in two dimensions. The active velocity $v$ is a positive constant, $D_R$ is the
+rotational diffusion coefficient, and $\xi$ is a Gaussian white noise satisfying $\left\langle\xi\right\rangle$
+and $\left\langle\xi(t_2)\xi(t_1)\right\rangle=\delta(t_2-t_1)$
+(i.e. with zero mean and correlation $\delta(t)$).
+\subsection{Description of its dynamics}
+Consider the dynamics governed by equations \eqref{eq:xode}, \eqref{eq:yode}, and\eqref{eq:phiode}.\\
+The equations \eqref{eq:xode} and \eqref{eq:yode} describe the change of the particle position,
+it only depends on constant velocity rate $v$ and stochastic variational angle of direction $\phi$.
+Thus, one can easily obtain $x(t)$ and $y(t)$ by solving these ODE with initial condition $x(0)=x_0, y(0)=y_0$ and a determinate given $\phi(t)$ in this way:
+$$
+    x(t)=x_0+v\int_0^t\cos\phi(\tau)d\tau,
+$$
+$$
+    y(t)=y_0+v\int_0^t\sin\phi(\tau)d\tau.
+$$
+The equation \eqref{eq:phiode} describe the change of angle of direction $\phi$ of the particle
+and the $\frac{d\phi}{dt}$ only depends on a Gaussian white noise $\xi$.
+Thus, one can obtain $\phi(t)$ by solving this Stochastic ODE with initial condition $\phi(0)=\phi_0$ in this way:
+$$
+    \phi(t)=\phi_0+\sqrt{2D_R}\int_0^t\xi(\tau)d\tau.
+$$
+
+\subsection{Autocorrelation of the direction of motion}
+The autocorrelation of the direction of motion is given by
+\begin{equation}
+    \label{eq:autocorr}
+    \left\langle\vec{n}(s+t)\cdot\vec{n}(s)\right\rangle = \lim_{T\to\infty}\left[\frac1T\int_0^T\vec{n}(s+t)\cdot\vec{n}(s)ds\right]=\exp\left(-\frac{\left\lvert t\right\rvert }{\tau_R}\right)
+\end{equation}
+where $\tau_R$ is  the  orientational  persistence  time.\\
+The equation \eqref{eq:autocorr} can be obtained by simple derivation,
+$$
+    \begin{aligned}
+        \left\langle \vec{n}(s+t)\cdot\vec{n}(s)\right\rangle
+         & =\left\langle\cos(\phi(s+t)-\phi(s))\right\rangle                            \\
+         & =\left\langle\cos(\phi(t)-\phi(0))\right\rangle                              \\
+         & =\left\langle\cos\left(\sqrt{2D_R}\int_0^t\xi(\tau)d\tau\right)\right\rangle \\
+    \end{aligned}
+$$
+Denote $\zeta(t)=\int_0^t\xi(\tau)d\tau$, since $\xi$ is a Gaussian white noise, then $\zeta(t)\sim \mathcal{N}(0,t)$.
+$$
+    \begin{aligned}
+        \left\langle \vec{n}(s+t)\cdot\vec{n}(s)\right\rangle
+         & =\left\langle\cos\left(\sqrt{2D_R}\zeta(t)\right)\right\rangle                                               \\
+         & =\int_{-\infty}^{\infty}\cos\left(\sqrt{2D_R}u\right)\frac1{\sqrt{2\pi t}}\exp\left(-\frac{u^2}{2t}\right)du \\
+         & =\exp\left(-D_R t\right)
+    \end{aligned}
+$$
+Since only consider $t>0$ here, in order to adapt for condition $t\leq 0$, then
+$$
+    \left\langle \vec{n}(s+t)\cdot\vec{n}(s)\right\rangle=\exp\left(-D_R \left\lvert t\right\rvert\right)
+$$
+which also shows the relation 
+\begin{equation}
+    \label{eq:depD}
+    \tau_R=\frac1{D_R},
+\end{equation}
+again.
+
+\subsubsection{Understanding of behaviour of autocorrelation of direction of motion}
+\hfill\break
+
+The equation \eqref{eq:autocorr} descirbe the autocorrelation of direction of motion,
+we can see the behaviour of autocorrelation between $\vec{n}(s)$ and $\vec{n}(s+t)$ with time lag $t$ is exponential decay when time lag $t$ increase.
+This exponential decay will be faster, when $\tau_R$ decrease, which shows why $\tau_R$ is called orientational persistence time.
+Since when $\tau_R$ increase, autocorrelation of direcation becomes bigger at a given time lag $t$,
+then $\max\left\{ t|\left\langle\vec{n}(s+t)\cdot\vec{n}(s)\right\rangle>1-\epsilon\right\}$ becomes bigger,
+which means orientation of particle can be persisted in one rough direction in longer time.
+
+\subsection{Mean square displacement}
+The mean square displacement is given by
+\begin{equation}
+    \text{MSD}(t)=\left\langle \left[\vec{r}(t)-\vec{r}(0)\right]^2 \right\rangle=\left\langle\left[x(t)-x(0)\right]^2 \right\rangle+\left\langle\left[y(t)-y(0)\right]^2 \right\rangle,
+\end{equation}
+which is analytically given by 
+\begin{equation}
+    \label{eq:MSD}
+    \text{MSD}(t)=2v^2\tau_R t,
+\end{equation}
+for $t\gg \tau_R$.
+
+\subsubsection{Understanding of behaviour of MSD(t)}
+\hfill\break
+
+The MSD descirbe how far the particle can reach, it naturally depends on $v,t$ without need to explain.
+Meanwhile, it also depends on $\tau_R$, as it's explained in previous section,
+it represents the orientational persistence time, thus with long time to persist in one rough direction,
+the particle can run longer in this direction,
+otherwise it just runs in a circle when $D_R$ is big which means with high change rate of direction.
+\section{Simulation}
+
+\subsection{Numerical solution of this Stochastic ODE}
+
+In order to simulation the dynamics progress of active Brownian motion on computer,
+use Euler forward method to obtain numerical solution for Stochastic ODE expressed in equations \eqref{eq:xode}, \eqref{eq:yode}, and\eqref{eq:phiode}.\\
+First of all, convert equation \eqref{eq:phiode} into difference equation with time interval $\delta t$,
+\begin{equation}
+    \phi(t+\Delta t)=\phi(t)+\sqrt{2D_R}\int_0^{\Delta t}\xi(\tau)d\tau,
+\end{equation}
+where $\int_0^{\Delta t}\xi(\tau)d\tau\sim\mathcal{N}(0,\Delta t)$.
+In each time step, generate a random number $\zeta\sim \mathcal{N}(0,\Delta t)$ to represent $\int_0^{\Delta t}\xi(\tau)d\tau\sim\mathcal{N}(0,\Delta t)$.\\
+Then,
+\begin{equation}
+    \label{eq:phidif}
+    \phi(t+\Delta t)=\phi(t)+\sqrt{2D_R}\zeta.
+\end{equation}
+For equations \eqref{eq:xode} and \eqref{eq:yode}, they can be converted into difference equations in this form:
+\begin{equation}
+    \label{eq:xdif}
+    x(t+\Delta t)=x(t)+v\cos(\phi(t)),
+\end{equation}
+\begin{equation}
+    \label{eq:ydif}
+    y(t+\Delta t)=y(t)+v\sin(\phi(t)).
+\end{equation}
+In the following simulation, these three equations \eqref{eq:phidif}, \eqref{eq:xdif} and \eqref{eq:ydif} will be used to carry simulation with Julia language. 
+For simplification, set initial condition $x(0)=0,y(0)=0,\phi(0)=0$ for all particles for simplification.\\
+The simulation result for trajectories of particles can be seen in Fig.~\ref{fig:trajectories} in Appendix, which can give people some basic intuition of this active Brownian motion.
+
+% \subsection{Simple simulation}
+
+% In this section, just to carry out a simulation with simple parameter to get intuition of this active Brownian motion of particles
+% by observing their trajectories.
+
+% \noindent For simplification, set initial condition $x(0)=0,y(0)=0$ for all particles for simplification, set $\phi(0)$ by a random angle which satisfies a uniform distribution $\mathcal{U}(0,2\pi)$ 
+% and set the totoal number of particles $N=1000$, end time $T_{end}=50$, time step $\Delta t=0.1$ and $D_R=1, v=1$.
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.6\textwidth]{../figs/simple.pdf}
+%     \caption{The trajectories of first 20 particles of active Brownian motion with specifid parameter.} 
+%     \label{fig:trajectories}
+% \end{figure}
+
+% From Fig.~\ref{fig:trajectories}, we can see the particles swimming in the two dimensional space
+% and their trajectories seems irregular, but people still can find pattern from some statistics such as 
+% autocorrelation and MSD which we are going to research in the following simulations.
+
+\subsection{Simulation to verify autocorrelation}
+
+This simulation is going to be carried out to verify whether autocorrelation satisfies equation \eqref{eq:autocorr}. \\
+The $\left\langle\cos(\phi(s+t)-\phi(s))\right\rangle$ will be numerically computed and 
+fitted to the exponential function \eqref{eq:autocorr} to estimate $\tau_R$, denote the estimated value as $\hat{\tau}_R$.\\
+First of all, compute the estimated autocorrelation $\hat{C}(t)$ with
+\begin{equation}
+\begin{aligned}
+\hat{C}(t)
+&=\left\langle\cos(\phi(s+t)-\phi(s))\right\rangle\\
+&=\frac1N\sum_{k=1}^N\frac1M\sum_{i=1}^M\cos(\phi_k(t_i+t)-\phi_k(t_i)),
+\end{aligned}
+\end{equation}
+where $\{\phi_k(t)\}_{k=1}^N$ is the simulated $\phi(t)$ for the $k^{th}$ particle, $N$ is the total number of particle
+and $\{t_i\}_{i=1}^M$ is a series of chosen time knots which satisfying $t_i-t_{i-1}=\Delta t$, $M$ is the number of time knots.\\
+Then the estimated $\hat{\tau}_R$ can be computed by
+\begin{equation}
+\hat{\tau}_R=-\frac1{\left({T^\top T}\right)^{-1}T^\top \hat{C}},
+\end{equation}
+where $T$ is vector formed by $\{t_i\}_{i=1}^M$ 
+and $\hat{C}$ is also a vector formed by $\{\hat{C}(t_i)\}_{i=1}^M$.
+
+\noindent For this simulation, let set the totoal number of particles $N=1000$, 
+for simplification set initial condition $x(0)=0,y(0)=0,\phi(0)=0$ for all particles,
+a set of selected values of $D_R=\{0.01,0.05,0.1,0.5,1,5,10,50,100\}$ or $\text{logspace}(-2,2,50)$,
+set time interval $\Delta t=10^{-3}$ and stop time $T_{end}=10\cdot\tau_R=10/D_R$.
+
+\subsubsection*{Simulation result of $\hat{C}(t)$}
+\hfill\break
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{../figs/Verify_autocorr.pdf}
+    \caption{The simulation result of estimated autocorrelation of direction of motion $\hat{C}(t)$.} \label{fig:corr}
+\end{figure}
+
+\noindent The simulation results of estimated autocorrelation of direction of motion $\hat{C}(t)$ for each $D_R=\{0.01,0.05,0.1,0.5,1,5,10,50,100\}$ 
+and corresponding estimated $\hat{\tau}_R$
+are shown in Fig.~\ref{fig:corr}, which shows the simulation result is quite close to the therotical values.
+Hence, this simulation can verify that autocorrelation of direction of motion satisfies \eqref{eq:autocorr}.
+
+\newpage
+\subsubsection*{Simulation result of dependence of $\tau_R$ on $D_R$}
+\hfill\break
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.55\textwidth]{../figs/dependence of τ and D.pdf}
+    \caption{The dependence of $\tau_R$ on $D_R$.} \label{fig:depD}
+\end{figure}
+
+\noindent The simulation result of the dependence of $\tau_R$ on $D_R$ based on a set of selected value $D_R=\text{logspace}(-2,2,50)$ is shown in Fig.~\ref{fig:depD},
+which uses log-log plot and shows that simulated $\hat{\tau}_R$ satisfies the equation \eqref{eq:depD}.
+
+\subsection{Simulation to verify MSD}
+This simulation is going to carried out to verify whether $\text{MSD}(t)$ satisfies equation \eqref{eq:MSD} when $t\gg\tau_R$.\\
+The estimate $\widehat{\text{MSD}}(t)$ is computed by
+\begin{equation}
+    \widehat{\text{MSD}}(t)=\frac1N\sum_{k=1}^N\left(\left[x_k(t)-x_k(0)\right]^2+\left[y_k(t)-y_k(0)\right]^2\right),
+\end{equation} 
+where $\{x_k(t)\}_{k=1}^N$ and $\{y_k(t)\}_{k=1}^N$ is the series of the simulated position of particle.
+
+\noindent For this simulation, let set the totoal number of particles $N=1000$, 
+for simplification set initial condition $x(0)=0,y(0)=0,\phi(0)=0$ for all particles, 
+choose a set of values of $v=\{0.1,1,10\}$ and $\tau_R=\{0.01,0.1,1,10,100\}$,
+set time interval $\Delta t=10^{-3}$ 
+and stop time $T_{end}=50\cdot\tau_R$ to satisfy condition $t\gg\tau_R$.
+\subsubsection*{Simulation result}
+\hfill\break
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{../figs/Verify_MSD.pdf}
+    \caption{The simulation result of function $\widehat{\text{MSD}}(t)$.} \label{fig:MSD}
+\end{figure}
+
+\noindent The simulation result of $\widehat{\text{MSD}}(t)$ is shown in Fig.~\ref{fig:MSD}, 
+which shows the estmiated line $\widehat{\text{MSD}}(t)$ is quite close to the therotical line $\text{MSD}(t)$.
+Hence, this simulation can verify the function $\text{MSD}(t)$ satisfies the equation \eqref{eq:MSD}.
+
+% \begin{table}
+%     \caption{Table captions should be placed above the
+%         tables.}\label{tab1}
+%     \begin{tabular}{|l|l|l|}
+%         \hline
+%         Heading level     & Example                                          & Font size and style \\
+%         \hline
+%         Title (centered)  & {\Large\bfseries Lecture Notes}                  & 14 point, bold      \\
+%         1st-level heading & {\large\bfseries 1 Introduction}                 & 12 point, bold      \\
+%         2nd-level heading & {\bfseries 2.1 Printing Area}                    & 10 point, bold      \\
+%         3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold      \\
+%         4th-level heading & {\itshape Lowest Level Heading.} Text follows    & 10 point, italic    \\
+%         \hline
+%     \end{tabular}
+% \end{table}
+
+% %
+% % ---- Bibliography ----
+% %
+% % BibTeX users should specify bibliography style 'splncs04'.
+% % References will then be sorted and formatted in the correct style.
+% %
+% % \bibliographystyle{splncs04}
+% % \bibliography{mybibliography}
+% %
+\begin{thebibliography}{8}
+    \bibitem{ref:ap}
+    Bechinger, C., Di Leonardo, R., Löwen, H., Reichhardt, C., Volpe, G., \& Volpe, G. (2016). Active 
+    particles in complex and crowded environments. Reviews of Modern Physics, 88(4), 045006. 
+
+    \bibitem{ref:abp}
+    Romanczuk, P., Bär, M., Ebeling, W., Lindner, B., \& Schimansky-Geier, L. (2012). Active Brownian 
+    particles. The European Physical Journal Special Topics, 202(1), 1-162. 
+\end{thebibliography}
+
+\section*{Appendix}
+
+\subsection*{Other figures}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{../figs/simple.pdf}
+    \caption{The trajectories of first 20 particles of active Brownian motion with specifid parameter.} 
+    \label{fig:trajectories}
+\end{figure}
+
+\subsection*{Code for simulation}
+
+\lstinputlisting[language=Julia]{../simulation.jl}
+    
+\end{document}
