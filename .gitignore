@@ -4,3 +4,4 @@ MSDMs
 *.pdf
 tmp.*
 __pycache__
+*.mp4
