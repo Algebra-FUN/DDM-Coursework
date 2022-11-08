@@ -393,21 +393,14 @@ MONTH = ("JAN", "FEB", "MAR", "APR", "MAY", "JUN",
 MONTH_MAP = {month: str(i).zfill(2) for i, month in enumerate(MONTH, 1)}
 
 
-def ckdir(dir):
-    try:
-        os.mkdir(dir)
-    except FileExistsError:
-        pass
-
-
 def organize(work_dir=WORK_DIR):
     for file in os.listdir(work_dir):
         day, month, year = re.findall(
             "(\d{2})-([A-Z]{3})-(\d{4})\.txt", file)[0]
-        target_dir = f"{work_dir}\\{year}"
+        target_dir = rf"{work_dir}\{year}"
         new_file = f"{MONTH_MAP[month]}{day}.txt"
-        ckdir(target_dir)
-        shutil.move(f"{work_dir}\\{file}", f"{target_dir}\\{new_file}")
+        os.path.exists(target_dir) or os.mkdir(target_dir)
+        shutil.move(rf"{work_dir}\{file}", rf"{target_dir}\{new_file}")
 
 
 # >>> organize(WORK_DIR)
