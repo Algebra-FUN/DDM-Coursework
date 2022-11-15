@@ -162,3 +162,32 @@ anim = FuncAnimation(fig, eachframe, frames=np.arange(0, 100))
 FFwriter = FFMpegWriter(fps=12)
 anim.save("figs/q3.mp4", writer=FFwriter)
 anim
+
+# %% 4
+# clocks
+
+fig = plt.figure(figsize=(2.5, 2.5), dpi=100)
+ax = fig.add_subplot(111, polar=True)
+plt.setp(ax.get_yticklabels(), visible=False)
+ax.set_xticks(np.linspace(0, 2*np.pi, 12, endpoint=False))
+ax.set_xticklabels(np.arange(1, 13))
+ax.set_theta_direction(-1)
+ax.set_theta_offset(np.pi/3)
+ax.grid(False)
+plt.ylim(0, 1)
+min_pointer, = ax.plot([0, 0], [0, 0.8], color="black", linewidth=3)
+hour_pointer, = ax.plot([0, 0], [0, 0.6], color="black", linewidth=3)
+
+
+def clock(t):
+    min = 2*np.pi*(t % 60)/60-np.pi/6
+    hour = 2*np.pi*t/720-np.pi/6
+    min_pointer.set_data([min, min], [0, 0.8])
+    hour_pointer.set_data([hour, hour], [0, 0.6])
+
+sample_rate = 4
+anim = FuncAnimation(fig, clock, frames=np.arange(0, 720+1, sample_rate))
+
+FFwriter = FFMpegWriter(fps=72/sample_rate)
+anim.save("figs/q4.mp4", writer=FFwriter)
+anim
