@@ -1,0 +1,177 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{beramono}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[colorlinks=true, linkcolor=blue]{hyperref}
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{Project: Community Detection and Network Resilience}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Yifei Fan}
+%
+\authorrunning{Y. Fan et al.}
+% First names are abbreviated in the running head._R
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{The Hong Kong University of Science and Technology, Hong Kong SAR,China\\
+    \email{yfanba@ust.hk}}
+%
+\maketitle              % typeset the header of the contribution
+
+\section{Dataset}
+In this report, we chooose "Coauthorships in network science" dataset\cite{ref:dataset} as our research target.
+
+\subsection{Intro}
+
+This "Coauthorships in network science" dataset contains a coauthorship network of scientists
+working on network theory and experiment, as compiled by M. Newman in May
+2006.  The network was compiled from the bibliographies of two review
+articles on networks, M. E. J. Newman, SIAM Review 45, 167-256 (2003) and
+S. Boccaletti et al., Physics Reports 424, 175-308 (2006), with a few
+additional references added by hand.  The version given here contains all
+components of the network, for a total of 1589 scientists, and not just the
+largest component of 379 scientists previously published.
+
+\section{Exploration on it's basic feature}
+
+The network visualization can be seen in Fig.\ref{fig:vis}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{../../fig/network.pdf}
+    \caption{Network Visualization of "Coauthorships in network science" network} 
+    \label{fig:vis}
+\end{figure}
+
+\subsection{Degree distribution}
+
+The degree distribution plot can be seen at Fig.\ref{fig:deg-dist}.
+From this figure, we can see the degree distribution "Coauthorships in network science" network obeys
+the power law, which means it can be seen as a scale-free network.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{../../fig/deg-dist.pdf}
+    \caption{Degree distribution of "Coauthorships in network science" network} 
+    \label{fig:deg-dist}
+\end{figure}
+
+\subsection{Average shortest distance}
+
+Since this network isn't a connected graph, even some node are isolated,
+so in order to finish this task, we just compute it's average shortest distance on it's giant component.
+The result of average shortest distance of giant component of the network is about $6.041867347935949$,
+which accords with the six degree of separation theory.
+
+\subsection{Average clustering coefficient}
+
+The result is $0.6377905695067805$.
+
+\section{Communiy Detection}
+
+Use the Girvan-Newman algorithm\cite{ref:gn-algo} to find its communities.
+
+The result is given by following Fig.\ref{fig:community}. 
+Since this network isn't a connected network, so nodes get into a lot of different communities about 400
+communities. But there are two major communities, the nodes in these two major communities are colored in orange and blue.
+As the algorithm progresses, these communities also split and some nodes form new communities.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{../../fig/communities.pdf}
+    \caption{Visualization of community detection of "Coauthorships in network science" network using Girvan-Newman algorithm. 
+    In this figure, we only show the communities whose number of members is greater than 30 and obmit other small community. 
+    Here $C$ means the number of communities.} 
+    \label{fig:community}
+\end{figure}
+
+\section{Network Resilience}
+
+We perform a series of random attack and a targeted attack on the network
+by removing nodes from the network with different node removal percentage $p$
+and observe the variation of the size of the giant component in this network.
+
+In random attack, we remove $\left\lfloor p N\right\rfloor$ nodes randomly from the network.
+In targeted attack, we remove nodes with $\left\lfloor p N\right\rfloor$ largest degree.
+
+We carry out 50 times random attack and report their average in each experiment.
+And, change parameter $p$ from 0 to 1.
+
+The experiment results are shown in Fig.\ref{fig:attack}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{../../fig/attack.pdf}
+    \caption{Size of giant component of "Coauthorships in network science" network after being attack by remove nodes.} 
+    \label{fig:attack}
+\end{figure}
+
+From experiment result, we can conclude that the "Coauthorships in network science" network 
+is resilience to random attacks, but it's very sensitive to targeted attacks
+, which shows that the scientific research relys on some small 
+amount of important scientist to intergate whole science community to work together.
+
+% \begin{table}
+%     \caption{Table captions should be placed above the
+%         tables.}\label{tab1}
+%     \begin{tabular}{|l|l|l|}
+%         \hline
+%         Heading level     & Example                                          & Font size and style \\
+%         \hline
+%         Title (centered)  & {\Large\bfseries Lecture Notes}                  & 14 point, bold      \\
+%         1st-level heading & {\large\bfseries 1 Introduction}                 & 12 point, bold      \\
+%         2nd-level heading & {\bfseries 2.1 Printing Area}                    & 10 point, bold      \\
+%         3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold      \\
+%         4th-level heading & {\itshape Lowest Level Heading.} Text follows    & 10 point, italic    \\
+%         \hline
+%     \end{tabular}
+% \end{table}
+
+% %
+% % ---- Bibliography ----
+% %
+% % BibTeX users should specify bibliography style 'splncs04'.
+% % References will then be sorted and formatted in the correct style.
+% %
+% % \bibliographystyle{splncs04}
+% % \bibliography{mybibliography}
+% %
+\begin{thebibliography}{8}
+    \bibitem{ref:dataset}
+    Newman, M. E. (2006). Finding community structure in networks using the eigenvectors of matrices. Physical review E, 74(3), 036104.
+
+    \bibitem{ref:gn-algo}
+    Girvan, M., Newman, M. E. J.: Community structure in social and biological 
+    networks. Proc. Natl. Acad. Sci. USA 99(12), 7821–7826 (2002). 
+\end{thebibliography}
+
+\section*{Appendix}
+
+\subsection*{Other figures}
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{../figs/simple.pdf}
+%     \caption{The trajectories of first 20 particles of active Brownian motion with specifid parameter.} 
+%     \label{fig:trajectories}
+% \end{figure}
+
+\subsection*{Code for simulation}
+
+\end{document}
