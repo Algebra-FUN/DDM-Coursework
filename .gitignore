@@ -7,3 +7,4 @@ __pycache__
 *.mp4
 *.bst
 *.cls
+.DS_Store
