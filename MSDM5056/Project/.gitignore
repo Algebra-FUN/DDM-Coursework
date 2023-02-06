@@ -1,0 +1,9 @@
+*.gz
+*.bst
+*.aux
+*.log
+*.out
+_minted-main
+fig
+data
+out

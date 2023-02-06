@@ -1,0 +1,297 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{algorithm}
+\usepackage{csvsimple}
+\usepackage{algpseudocode}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{beramono}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[colorlinks=true, linkcolor=blue]{hyperref}
+
+%%
+%% Julia definition (c) 2014 Jubobs
+%%
+\lstdefinelanguage{Julia}%
+  {morekeywords={abstract,break,case,catch,const,continue,do,else,elseif,%
+      end,export,false,for,function,immutable,import,importall,if,in,%
+      macro,module,otherwise,quote,return,switch,true,try,type,typealias,%
+      using,while},%
+   sensitive=true,%
+   alsoother={$},%
+   morecomment=[l]\#,%
+   morecomment=[n]{\#=}{=\#},%
+   morestring=[s]{"}{"},%
+   morestring=[m]{'}{'},%
+}[keywords,comments,strings]%
+
+\lstset{%
+    language         = Julia,
+    basicstyle       = \ttfamily,
+    keywordstyle     = \bfseries\color{blue},
+    stringstyle      = \color{magenta},
+    commentstyle     = \color{ForestGreen},
+    showstringspaces = false,
+}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{Report: KPR Game for
+Resource Allocation in the Internet of Things}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Yifei Fan}
+%
+\authorrunning{Y. Fan et al.}
+% First names are abbreviated in the running head._R
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{The Hong Kong University of Science and Technology, Hong Kong SAR,China\\
+    \email{yfanba@ust.hk}}
+%
+\maketitle              % typeset the header of the contribution
+
+\section{Introduction}
+In real world, more and more The Internet of Things participate in our life 
+delivering innovative applications which make our life better. However, those IoT devices 
+rely on robust and reliable communication wireless network to work well with other IoT devices.
+Thus, the communication resource allocation problem becomes the basic problem the IoT system should face.
+There are many diffierent approches to solve this problem. One of these approches is game-theortic approach, 
+people can utilize this approch to enable IoT devices to allocate communication resources in a self-organized manner.
+
+In this work, we are going to explore an approch based on Kolkata paise restaurant game\cite{ref:KPR} framework to implement communication 
+resources allocations among IoT devices and improve the usage of resource units by utilizing the information from neighbors to avoid confliction.
+
+\section{Theory}
+
+\subsection{IoT System Model}
+
+Consider a wireless IoT System having $b$ resource blocks to serves $N$ IoT devices. 
+Each resource block(RB) can serve only one IoT device at a time slot. Whenever multiple IoT devices
+try to use the same RB, the RB will fail to serve due to confliction. 
+During a time slot, each device may try to send information with probability $p$, 
+thus the expected number of IoTs in sending status in a time slot is $N\cdot p$.
+
+\subsection{Random Resource Allocation}
+
+A simple approach is just to allow the IoT devicesto randomly choose RBs. 
+In this case, $b$ RBs are chosen with the equal probability. 
+Let $S$ be the random variable of the number of IoT devices who are served by RB successfully.
+Let $N_t$ the number of IoT devices who sends information is $N_t$ at time slot $t$.
+Then the conditional probability distribution function of $S$ at time slot $t$ when $N_t=n_t$,
+
+\begin{equation}
+\label{eq:pdfS}
+P(S\geq s|N_t=n_t)=\prod_{k=0}^{s-1}\frac{b-k}b\left(\frac{b-s}{b}\right)^{(n_t-s)}, s\in[0,b-1].
+\end{equation}
+
+By using \eqref{eq:pdfS}, one can obtain the probability function of $P(S=s|N_t=n_t)$.
+
+The probability function of $N_t$ is:
+
+\begin{equation}
+\label{eq:pdfNt}
+P(N_t=n_t)=\binom{N}{n_t}p^{n_t}(1-p)^{N-n_t}.
+\end{equation}
+
+Then, we can obtain the unconditional probability function $S$,
+
+\begin{equation}
+P(S=s)=\sum_{n_t}^N\binom{n_t}{s}P(S=s|N_t=n_t)P(N_t=n_t)
+\end{equation}
+
+Then, we can obtain the expectation of $S$
+\begin{equation}
+\label{eq:ES}
+E[S]=\sum_{s=1}^bsP(S=s)
+\end{equation}
+
+All of above formula are from the paper\cite{ref:paper}.
+
+Now, in this report, we give a approximate formula to estimate the service rate of one RB.
+Suppose the service rate of each resource block is independent, 
+then we can calculate the service of one RB by
+
+\begin{equation}
+E[\mbox{Service Rate}]=\frac nb\left(\frac{b-1}{b}\right)^{n-1}
+\end{equation}
+
+which is just a estimation formula. The therotical formula for service rate is $\frac{E[S]}{b}$, one can figure it out using equation \eqref{eq:ES}.
+
+\subsection{Resource Allocation based on KPR Game}
+
+The IoT devices can utilize information of the RB usage of other IoTs at time slot $t-1$ to
+make decision to choose RB intelligently at time slot $t$. However, in practical situation, 
+accessing information from other IoTs also involves the communications among IoTs which leads to the additional cost.
+Thus, we should limit the communication range among IoTs to reduce the cost into an affordable number. 
+What's more, from therotical analysis, if the IoTs can obtain all the information of all IoTs, then they will make the same choice,
+which will lead to a bad service rate of RBs.
+
+In this model, the IoT devices can only communicate with neighbor IoTs within a
+range $r_c$ to learn about their RB usage at time slot $t-1$. Let $\tau_t$ be the set
+IoTs who send information at time slot $t$ and $\mathcal{N}_i$ be the set of neighbors of IoT$_i$.
+Let $S_t$ be the set of IoTs that transmitted successfully at slot $t$ and $F_t$ the set of IoT
+devices that transmit u successfully at slot $t$ such that $S_t \bigcup F_t = \tau_t$ and $S_t\bigcap F_t = \emptyset$. 
+Let $r_{t,i}$ denote the RB used by IoT$_i$ in $\tau_t$. Assume each RB has a rank and all IoTs perfer the RB with higher rank.
+
+The algorithm is shown in Algorithm. \ref{alg:rbc}.
+
+\begin{algorithm}
+    \caption{Resource Block Choosing Algorithm}
+    \label{alg:rbc}
+    \begin{algorithmic}
+    \If{$F_{t-1}\bigcap \mathcal{N}_i\neq \emptyset$}
+        \State $r_{t,i} \gets$ random(RBs whose rank $\leq$ RBs used by $F_{t-1}\bigcap \mathcal{N}_i$)
+    \ElsIf{$S_{t-1}\bigcap \mathcal{N}_i\neq \emptyset$}
+        \State $r_{t,i} \gets$ random(RBs whose rank $\geq$ RBs used by $S_{t-1}\bigcap \mathcal{N}_i$)
+    \Else
+        \State $r_{t,i} \gets$ random(RBs)
+    \EndIf
+    \end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Understanding of this algorithm}
+\hfill\break
+Let we explain why this algorithm really makes sense. 
+
+Assume you are the IoT$_i$, when your neighbor IoT$_j$ failed with RB$_k$, 
+which means the RBs with higher rank than the rank of RB$_k$ 
+have relative high probability to be taken in the next time slot, thus you should try other RB with lower rank to avoid confliction with other IoTs.
+
+Similarly, when your neighbor IoT$_j$ succeed with RB$_k$, 
+which means the RBs with lower rank than the rank of RB$_k$ 
+are easy to access withou confliction in the next time slot, thus you should try other RB with higher rank in order to get better communication performace.
+
+\section{Simulations}
+
+\subsection{Configure}
+
+We are going to carry out a computer simulation to compare the performace of Random Resource Allocation
+and the Resource Allocation based on KPR Game. 
+We assume that the IoT devices are deployed within a square field of dimension $R$ meters
+based on Poisson point process with device density $λ$ persquare meter. 
+In our simulations, we set the dimension $R$ of the
+deployment region to be 20 meters and the number of resource
+blocks $b$ to be 5. The communication ranges $r_c$ will be varied. Furthermore, we analyze the performance of the
+learning framework with low device density of $\lambda = 2.5$ and
+high device density of $\lambda = 5$. Moreover, we study the effect
+of the transmission probabilities $p$ on the performance of two method. 
+
+\subsection{Result and analysis}
+
+The experiment result of situation of transmission probabilities $p=0.01$ is shown in Fig.\ref{fig:result1}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{../figs/Average service rate of RBs (p=0.01).pdf}
+    \caption{The simulation result of service rate of RBs using two method. In this experiment, we set $p=0.01$.} 
+    \label{fig:result1}
+\end{figure}
+
+From the Fig.\ref{fig:result1}, we can see the method of Algorithm. \ref{alg:rbc} can improve the service rate of RBs with specified parameter of 
+communication range. 
+
+For the situation of $\lambda=2.5$, the enhancement of proposed algorithm is not big, but it indeed improve a little bit. 
+The highest service rate can be achieved when $r_c\approx3$.
+
+For the situation of $\lambda=5$, the enhancement of proposed algorithm is significant.
+The highest service rate can be achieved is $28.14\%$ when $r_c\approx3.2$, which almost four times greater than baseline.
+
+However, the parameter of communication range $r_c$ is not the bigger the better. 
+You can see the performance drops when $r_c$ is too big. 
+Since when $r_c$ is too big, IoT can get information from almost all other IoTs, then they make the same chioce which lead to confliction.
+Thus, the parameter of $r_c$ should tune when apply this algorithm.
+
+The experiment result of situation of transmission probabilities $p=0.05$ is shown in Fig.\ref{fig:result2}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{../figs/Average service rate of RBs (p=0.05).pdf}
+    \caption{The simulation result of service rate of RBs using two method. In this experiment, we set $p=0.05$.} 
+    \label{fig:result2}
+\end{figure}
+
+The enhancement of proposed algorithm is more significant.
+Since when $p$ is larger enough, the $E[N_t]$ will be big, 
+the random resource allocation will lead massive confliction then reduce the service rate.
+On the contrary, the proposed algorithm can allocate the resource blocks more efficiently, 
+then reduce the probability of confliction and improve the performace.
+
+\newpage
+\begin{thebibliography}{8}
+    \bibitem{ref:KPR}
+    Ghosh, Asim, et al. "Kolkata paise restaurant problem: An introduction." Econophysics of Systemic Risk and Network Dynamics. Springer, Milano, 2013. 173-200.
+
+    \bibitem{ref:paper}
+    Park, Taehyeun, and Walid Saad. "Kolkata paise restaurant game for resource allocation in the Internet of Things." 2017 51st Asilomar Conference on Signals, Systems, and Computers. IEEE, 2017.
+
+    \bibitem{ref2}
+    Chakrabarti, Anindya Sundar, et al. "The Kolkata Paise Restaurant problem and resource utilization." Physica A: Statistical Mechanics and its Applications 388.12 (2009): 2420-2426.
+\end{thebibliography}
+
+\section*{Appendix}
+
+\subsection*{Data of result of simulation}
+
+\subsubsection*{Data of experiment($p=0.01$)}
+
+\hfill\break
+\csvautotabular{../out/data1.csv}
+
+\subsubsection*{Data of experiment($p=0.05$)}
+
+\hfill\break
+\csvautotabular{../out/data2.csv}
+
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{../figs/simple.pdf}
+%     \caption{The trajectories of first 20 particles of active Brownian motion with specifid parameter.} 
+%     \label{fig:trajectories}
+% \end{figure}
+
+\newpage
+\subsection*{Code for simulation}
+
+\lstinputlisting[language=Julia]{../code/KPR4IoT.jl}
+    
+\end{document}
