@@ -116,7 +116,9 @@ class Softmax(Node):
         Returns:
             ndarray: softmax activation result.
         '''
-        self.ex = np.exp(x)
+        # ! to avoid value overflow
+        self.x_ = x - x.max(axis=1).reshape(-1,1)
+        self.ex = np.exp(self.x_)
         self.sum_ex = self.ex.sum(axis=1).reshape(-1, 1)
         assert self.sum_ex.shape[0] == x.shape[0]
         return self.ex / self.sum_ex
@@ -160,7 +162,8 @@ class CrossEntropy(Node):
         Returns:
             ndarray: gradient of L with respect to node's input, dL/dx
         '''
-        return -delta * self.l / self.x
+        return -delta.reshape(-1,1) * self.l / self.x
+
 
 
 class Mean(Node):
@@ -328,9 +331,8 @@ if __name__ == '__main__':
             Implement the SGD update here
             '''
             for layer in net:
-                for para, grad in zip(layer.parameters, layer.parameters_deltas):
-                    para -= learning_rate*grad
-            raise Exception("No SGD implementation")
+                for param, grad in zip(layer.parameters, layer.parameters_deltas):
+                    param -= learning_rate*grad
 
         # test set results
         result_test, loss_test = net_forward(
