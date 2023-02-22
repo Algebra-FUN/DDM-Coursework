@@ -303,7 +303,7 @@ if __name__ == '__main__':
     num_digit = 10
     # an epoch means running through the training set roughly once
     num_epoch = 10
-    train_data, train_label, test_data, test_label = load_MNIST()
+    test_data, test_label, train_data, train_label = load_MNIST()
     num_iteration = len(train_data) // batch_size
 
     # define a list as a network, nodes are chained up
