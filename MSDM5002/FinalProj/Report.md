@@ -125,6 +125,7 @@ Thank for my teammates' hard work.
 <img src="img/result.png" style="zoom: 28%;" />
 
 <center><strong>Fig.4.1</strong> The final result of final competition. We are Group5.</center>
+
 ## Our Code
 
 After final competition, we made the repository open on the Github, you can view  the source code by click following links:

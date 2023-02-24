@@ -8,3 +8,4 @@ __pycache__
 *.bst
 *.cls
 .DS_Store
+.vscode
