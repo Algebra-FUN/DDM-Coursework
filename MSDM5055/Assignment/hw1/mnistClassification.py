@@ -98,6 +98,20 @@ class Sigmoid(Node):
             ndarray: gradient of L with respect to node's input, dL/dx
         '''
         return delta * ((1 - self.y) * self.y)
+    
+class ReLU(Node):
+    '''
+    ReLU activation function
+    '''
+    def __init__(self):
+        super().__init__('relu', [])
+
+    def forward(self,x):
+        self.threshold = 1 - (x < 0)
+        return x*self.threshold
+    
+    def backward(self,grad):
+        return grad*self.threshold
 
 
 class Softmax(Node):
@@ -163,6 +177,37 @@ class CrossEntropy(Node):
             ndarray: gradient of L with respect to node's input, dL/dx
         '''
         return -delta.reshape(-1,1) * self.l / self.x
+    
+
+class SquareError(Node):
+    '''
+    SquareError loss function
+    '''
+
+    def __init__(self):
+        super().__init__('square_error', [])
+
+    def forward(self, x, l):
+        '''
+        Args:
+            x (2darray): prediction array of shape (#sample,#class).
+            l (2darray): label array of shape (#sample,#class). 
+
+        Returns:
+            ndarray: loss of cross entropy.
+        '''
+        self.d = x - l
+        return (self.d**2).sum(axis=1)
+
+    def backward(self, delta):
+        '''
+        Args:
+            delta (ndarray): gradient of L with repect to node's output, dL/dy.
+
+        Returns:
+            ndarray: gradient of L with respect to node's input, dL/dx
+        '''
+        return delta.reshape(-1,1) * 2 * self.d
 
 
 
@@ -280,7 +325,7 @@ def match_ratio(result, label):
 def net_forward(net, x, label):
     '''forward function for this sequencial network.'''
     for node in net:
-        if node.name == 'cross_entropy':
+        if node.name in ('cross_entropy','square_error'):
             result = x
             x = node.forward(x, label)
         else:
@@ -298,16 +343,19 @@ def net_backward(net):
 
 if __name__ == '__main__':
     batch_size = 200
-    learning_rate = 0.3
+    learning_rate = 1e-2
     dim_img = 784
+    hidden = 64
     num_digit = 10
     # an epoch means running through the training set roughly once
-    num_epoch = 10
+    num_epoch = 100
     test_data, test_label, train_data, train_label = load_MNIST()
     num_iteration = len(train_data) // batch_size
 
     # define a list as a network, nodes are chained up
-    net = [Linear(dim_img, num_digit), Softmax(), CrossEntropy(), Mean()]
+    # net = [Linear(dim_img, hidden), Sigmoid(), Linear(hidden,num_digit) ,Softmax(), CrossEntropy(), Mean()]
+    # net = [Linear(dim_img,num_digit) ,Softmax(), CrossEntropy(), Mean()]
+    net = [Linear(dim_img, hidden), ReLU(), Linear(hidden,num_digit) ,Softmax(), SquareError(), Mean()]
 
     nparams = 0
     for term in net:
