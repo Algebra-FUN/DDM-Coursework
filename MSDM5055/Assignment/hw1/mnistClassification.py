@@ -148,12 +148,9 @@ class Softmax(Node):
             ndarray: gradient of L with respect to node's input, dL/dx
         '''
         N,F = delta.shape
-        result = np.zeros((N,F))
-        for n in range(N):
-            s = self.s[n]
-            S = np.diag(s) - np.outer(s,s)
-            result[n] = delta[n] @ S
-        return result
+        # [N,F,F]
+        S = self.s[:,None,:]*np.identity(F) - self.s[:,:,None]@self.s[:,None,:]
+        return np.squeeze(S @ delta[:,:,None])
 
 
 class CrossEntropy(Node):
@@ -351,9 +348,9 @@ def net_backward(net):
 if __name__ == '__main__':
     np.random.seed(123456)
     batch_size = 200
-    learning_rate = 3e-1
+    learning_rate = 1
     dim_img = 784
-    hidden = 16
+    hidden = 64
     num_digit = 10
     # an epoch means running through the training set roughly once
     num_epoch = 100
