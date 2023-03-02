@@ -132,11 +132,12 @@ class Softmax(Node):
             ndarray: softmax activation result.
         '''
         # ! to avoid value overflow
-        self.x_ = x - x.max(axis=1).reshape(-1,1)
+        self.x_ = x - x.max(axis=1,keepdims=True)
         self.ex = np.exp(self.x_)
-        self.sum_ex = self.ex.sum(axis=1).reshape(-1, 1)
+        self.sum_ex = self.ex.sum(axis=1,keepdims=True)
         assert self.sum_ex.shape[0] == x.shape[0]
-        return self.ex / self.sum_ex
+        self.s = self.ex / self.sum_ex
+        return self.s
 
     def backward(self, delta):
         '''
@@ -146,7 +147,13 @@ class Softmax(Node):
         Returns:
             ndarray: gradient of L with respect to node's input, dL/dx
         '''
-        return delta * (self.sum_ex* self.ex - self.ex**2) / self.sum_ex**2
+        N,F = delta.shape
+        result = np.zeros((N,F))
+        for n in range(N):
+            s = self.s[n]
+            S = np.diag(s) - np.outer(s,s)
+            result[n] = delta[n] @ S
+        return result
 
 
 class CrossEntropy(Node):
@@ -166,7 +173,7 @@ class CrossEntropy(Node):
         Returns:
             ndarray: loss of cross entropy.
         '''
-        self.x, self.l = np.clip(x,1e-16,1), l
+        self.x, self.l = np.clip(x,1e-16,None), l
         return -l * np.log(self.x)
     def backward(self, delta):
         '''
@@ -344,9 +351,9 @@ def net_backward(net):
 if __name__ == '__main__':
     np.random.seed(123456)
     batch_size = 200
-    learning_rate = 3
+    learning_rate = 3e-1
     dim_img = 784
-    hidden = 32
+    hidden = 16
     num_digit = 10
     # an epoch means running through the training set roughly once
     num_epoch = 100
@@ -354,8 +361,12 @@ if __name__ == '__main__':
     num_iteration = len(train_data) // batch_size
 
     # define a list as a network, nodes are chained up
+    # net = [Linear(dim_img, hidden), Linear(hidden,num_digit) ,Softmax(), CrossEntropy(), Mean()]
+    # net = [Linear(dim_img, hidden), Linear(hidden,num_digit) ,Softmax(), SquareError(), Mean()]
+    # net = [Linear(dim_img, hidden), Sigmoid(), Linear(hidden,num_digit) ,Softmax(), SquareError(), Mean()]
     net = [Linear(dim_img, hidden), Sigmoid(), Linear(hidden,num_digit) ,Softmax(), CrossEntropy(), Mean()]
     # net = [Linear(dim_img,num_digit) ,Softmax(), CrossEntropy(), Mean()]
+    # net = [Linear(dim_img,num_digit) ,Softmax(), SquareError(), Mean()]
     # net = [Linear(dim_img, hidden), ReLU(), Linear(hidden,num_digit) ,Softmax(), SquareError(), Mean()]
 
     nparams = 0
@@ -374,6 +385,9 @@ if __name__ == '__main__':
         for j in range(num_iteration):
             x, label = random_draw(train_data, train_label, batch_size)
             result, loss = net_forward(net, x, label)
+
+            if np.isnan(loss):
+                raise ValueError("Loss NaN Error")
 
             net_backward(net)
             '''
