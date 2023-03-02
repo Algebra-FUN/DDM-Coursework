@@ -149,8 +149,8 @@ class Softmax(Node):
         '''
         N,F = delta.shape
         # [N,F,F]
-        S = self.s[:,None,:]*np.identity(F) - self.s[:,:,None]@self.s[:,None,:]
-        return np.squeeze(S @ delta[:,:,None])
+        S = self.s[:,None,:]*np.identity(F) - np.einsum("ni,nj->nij",self.s,self.s)
+        return np.einsum("nij,nj->ni",S,delta)
 
 
 class CrossEntropy(Node):
