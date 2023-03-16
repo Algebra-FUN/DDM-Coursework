@@ -75,10 +75,11 @@ def train(model,loss_func, optimizer, train_dataloader, test_data, epochs=10):
         print(f"Test Error: \n Accuracy: {(100*acc):>0.2f}%, Avg loss: {loss:>10f} \n")
     print("Done!")
 
-torch.manual_seed(123456)
-net = NeuralNetwork()
-net.to(device)
-loss_func = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(),lr=1e-1)
-train(net,loss_func,optimizer,train_loader,test_dataset)
-torch.save(net, 'mnistNet.pth')
+if __name__ == "__main__":
+    torch.manual_seed(123456)
+    net = NeuralNetwork()
+    net.to(device)
+    loss_func = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(),lr=1e-1)
+    train(net,loss_func,optimizer,train_loader,test_dataset)
+    torch.save(net, 'mnistNet.pth')
