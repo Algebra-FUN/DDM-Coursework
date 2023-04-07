@@ -1,0 +1,3 @@
+[submodule "MSDM5055"]
+	path = MSDM5055
+	url = https://github.com/Algebra-FUN/MSDM5055.git
