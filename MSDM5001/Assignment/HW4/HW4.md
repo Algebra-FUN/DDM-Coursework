@@ -1,0 +1,9 @@
+# Description on an application of quantum annealing in life science
+
+## Background
+
+In Life science, drug discovery involves macromolecular compound design such as protein design. Researchers have to find the best protein from all candidate proteins, involving combinational optimization which will consume a great amount of time on computation. So scientists can use quantum annealing to accelerate this progress. 
+
+## One application
+
+One application is using its quantum annealer-powered approach to explore the development of antiviral peptides that might block infection by the SARS-CoV-2 virus. SARS-CoV-2 relies on the spike protein molecules to infect human cells, so scientists were going to design a peptide that could thwart infection by trapping viral spike proteins in their closed state.  Researchers first created a fixed chemical backbone as a scaffold for the peptide, and then used the quantum annealing device to explore the huge combinatorial space of possible amino acid compositions for that scaffold. This quantum-assisted search made it possible to identify molecules that might be especially well-suited for binding and inhibiting the spike protein. Finally, researchers found several promising peptide designs and these designs have been computationally validated and chemically synthesized, and are now being tested for their ability to trap the SARS-CoV-2 spike protein in its closed, inactive state. In contrast, traditional approaches require using the a series of known proteins as starting points, which relies on researchers' experience and inspirations. Now with quantum annealing, we can utilize make use of a combination of both naturally-occurring and synthetic amino acids to develop desired molecules.

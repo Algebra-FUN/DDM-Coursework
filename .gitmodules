@@ -1,0 +1,15 @@
+[submodule "MSDM5055"]
+	path = MSDM5055
+	url = https://github.com/Algebra-FUN/MSDM5055.git
+[submodule "MSDM5004"]
+	path = MSDM5004
+	url = https://github.com/Algebra-FUN/MSDM5004.git
+[submodule "MSDM5053"]
+	path = MSDM5053
+	url = https://github.com/Algebra-FUN/MSDM5053.git
+[submodule "MSDM5058"]
+	path = MSDM5058
+	url = https://github.com/Algebra-FUN/MSDM5058.git
+[submodule "MSDM5005"]
+	path = MSDM5005
+	url = https://github.com/Algebra-FUN/MSDM5005.git

@@ -1,0 +1,11 @@
+.ipynb_checkpoints
+MSDMs
+*.zip
+*.pdf
+tmp.*
+__pycache__
+*.mp4
+*.bst
+*.cls
+.DS_Store
+.vscode
