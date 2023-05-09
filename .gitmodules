@@ -13,3 +13,6 @@
 [submodule "MSDM5005"]
 	path = MSDM5005
 	url = https://github.com/Algebra-FUN/MSDM5005.git
+[submodule "MSDM5002/FinalProj/code"]
+	path = MSDM5002/FinalProj/code
+	url = https://github.com/HexWuZi-Research/HexMCTS.jl.git
