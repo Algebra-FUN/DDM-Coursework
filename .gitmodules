@@ -12,7 +12,7 @@
 	url = https://github.com/Algebra-FUN/MSDM5058.git
 [submodule "MSDM5005"]
 	path = MSDM5005
-	url = https://github.com/Algebra-FUN/MSDM5005.git
+	url = https://github.com/Annoying-MSDM5005/Classwork.git
 [submodule "MSDM5002/FinalProj/code"]
 	path = MSDM5002/FinalProj/code
 	url = https://github.com/HexWuZi-Research/HexMCTS.jl.git
